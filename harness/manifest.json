@@ -1,0 +1,82 @@
+{
+  "$schema": "./manifest.schema.md",
+  "version": 1,
+  "profile": "desktop",
+  "description": "Machine-readable inventory of everything this repository deploys. `bin/dsh` reads this file; update it whenever an artifact is added or moved.",
+  "homes": {
+    "dsh": "~/.dsh",
+    "agents": "~/.agents"
+  },
+  "artifacts": [
+    {
+      "id": "instructions-global",
+      "kind": "instructions",
+      "source": "harness/instructions/AGENTS.md",
+      "target": "~/.agents/AGENTS.md",
+      "mode": "symlink",
+      "authority": "repo",
+      "notes": "User-global instruction file. Loaded before every project AGENTS.md; the ~/.dsh/AGENTS.md copy is intentionally not used so the file stays tool-agnostic."
+    },
+    {
+      "id": "skills",
+      "kind": "skills",
+      "source": "harness/skills",
+      "target": "~/.agents/skills",
+      "mode": "symlink-tree",
+      "authority": "repo",
+      "notes": "Each first-level directory becomes ~/.agents/skills/<name> -> repo. DSH ranks user-agents skills at 500, below project skills and above bundled skills."
+    },
+    {
+      "id": "profile-cordis-patch",
+      "kind": "profile",
+      "source": "harness/profile/desktop/cordis.patch.yml",
+      "target": "~/.dsh/profiles/desktop/cordis.patch.yml",
+      "mode": "copy",
+      "authority": "repo",
+      "notes": "The profile patch layer: models, UI, tool and agent settings. DSH and the Web Settings page also write this file, so run `bin/dsh capture` after changing settings in the app."
+    },
+    {
+      "id": "profile-package-json",
+      "kind": "profile",
+      "source": "harness/profile/desktop/package.json",
+      "target": "~/.dsh/profiles/desktop/package.json",
+      "mode": "copy",
+      "authority": "repo",
+      "notes": "Profile bundles in dsh.profile.bundles (ordered, later wins) and third-party bundle dependencies."
+    },
+    {
+      "id": "profile-pnpm-workspace",
+      "kind": "profile",
+      "source": "harness/profile/desktop/pnpm-workspace.yaml",
+      "target": "~/.dsh/profiles/desktop/pnpm-workspace.yaml",
+      "mode": "copy",
+      "authority": "repo",
+      "notes": "pnpm settings for the profile (node linker, allowBuilds)."
+    }
+  ],
+  "plugins": [
+    {
+      "id": "pinned-workspaces",
+      "package": "@local/pinned-workspaces",
+      "source": "harness/plugins/pinned-workspaces",
+      "install": "link",
+      "enabled": true,
+      "target": "~/.dsh/profiles/desktop/node_modules/@local/pinned-workspaces",
+      "notes": "Installed on the source machine via a link: dependency to its pre-repo location. The copy here is canonical going forward; `bin/dsh apply --with-plugins` creates link:<repo>/harness/plugins/pinned-workspaces in the target profile and selects the bundle. Restart DSH afterwards."
+    }
+  ],
+  "mcp": {
+    "source": "harness/mcp/servers.yaml",
+    "deployedIn": "harness/profile/desktop/cordis.patch.yml",
+    "notes": "MCP servers are plugin rows in the profile patch. servers.yaml is the human inventory that must stay in sync with it."
+  },
+  "excluded": [
+    "~/.dsh/.credentials.yaml",
+    "~/.dsh/sessions/",
+    "~/.dsh/storages/",
+    "~/.dsh/dsh-runtimes/",
+    "~/.dsh/profiles/desktop/cordis.yml",
+    "~/.dsh/profiles/desktop/node_modules/",
+    "~/.dsh/profiles/desktop/pnpm-lock.yaml"
+  ]
+}

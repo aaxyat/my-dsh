@@ -1,0 +1,101 @@
+{
+  "schema": 1,
+  "generatedBy": "bin/dsh capture",
+  "capturedAt": "2026-11-11T15:07:31Z",
+  "host": {
+    "system": "Darwin",
+    "release": "27.0.0",
+    "arch": "arm64",
+    "model": "Mac16,1",
+    "python": "3.12.14"
+  },
+  "dsh": {
+    "version": "0.2.2-rc.1",
+    "profile": "desktop",
+    "home": "~/.dsh",
+    "agentsHome": "~/.agents",
+    "app": "/Applications/DeepSeek Harness.app"
+  },
+  "runtime": {
+    "platform": "darwin",
+    "arch": "arm64",
+    "node": "24.21.0",
+    "pnpm": "11.28.5",
+    "python": "3.12.14"
+  },
+  "profile": {
+    "bundles": [
+      "@deepseek-ai/dsh-base",
+      "@deepseek-ai/dsh-web-app",
+      "@local/pinned-workspaces"
+    ],
+    "dependencies": {
+      "@local/pinned-workspaces": "link:/Users/aaxyat/Documents/Projects/Deepseek/pinned-workspaces"
+    }
+  },
+  "plugins": {
+    "installedDependencies": [
+      "@local/pinned-workspaces"
+    ],
+    "thirdParty": [],
+    "personal": [
+      {
+        "id": "pinned-workspaces",
+        "package": "@local/pinned-workspaces",
+        "installed": true,
+        "enabled": true,
+        "install": "link",
+        "deployed": true
+      }
+    ]
+  },
+  "skills": {
+    "personal": [],
+    "bundled": [
+      "agent-experience",
+      "cordis-composition-reference",
+      "cordis-plugin-development",
+      "diagnose-windows-sandbox-acl",
+      "editing-cordis-compositions",
+      "office",
+      "office-docx",
+      "office-export-pdf",
+      "office-pptx",
+      "office-recalculate",
+      "office-render",
+      "office-xlsx"
+    ],
+    "userRoot": "~/.agents/skills"
+  },
+  "instructions": {
+    "source": "harness/instructions/AGENTS.md",
+    "target": "~/.agents/AGENTS.md",
+    "deployed": false
+  },
+  "credentials": {
+    "store": "~/.dsh/.credentials.yaml",
+    "refs": [
+      "DEEPSEEK_API_KEY",
+      "OPENCODE_GO_API_KEY"
+    ],
+    "note": "names only; values are never captured or committed"
+  },
+  "managedFiles": {
+    "harness/profile/desktop/cordis.patch.yml": {
+      "sha256": "af219b58560d886094c1d13e9fbf32f6408f8a92dffefb4216ea3259bc04a740",
+      "bytes": 6519
+    },
+    "harness/profile/desktop/package.json": {
+      "sha256": "cb07aea24800e10b37d2359623cf95869ec28916bc93f03da0d9185b0cadb52c",
+      "bytes": 349
+    },
+    "harness/profile/desktop/pnpm-workspace.yaml": {
+      "sha256": "ae7c5b68e2f157528e62885804e69e88583897b775e03c86fcbe52feaf498aba",
+      "bytes": 61
+    },
+    "harness/instructions/AGENTS.md": {
+      "sha256": "dd70eb9ac187006b4bd4bab743d50a75c8ead36a8c9d106cde5d95b82e28bbf5",
+      "bytes": 4523
+    }
+  }
+}

@@ -1,0 +1,44 @@
+# Third-party bundles installed in the DSH profile.
+#
+# This file is the human/agent-readable record. The authoritative machine state
+# is ~/.dsh/profiles/<profile>/package.json, which `bin/dsh capture` snapshots
+# into machine/inventory.json.
+#
+# Rules:
+#   - Record only bundles that are installed or deliberately evaluated.
+#   - Pin the version actually installed (capture reports it).
+#   - `source` is the spec pnpm used: registry range/tag, git URL, tarball or file: path.
+#   - Never store tokens or authenticated URLs.
+#   - Do not vendor the package; this repo records provenance, not source.
+
+version: 1
+
+bundles:
+  - name: "@deepseek-ai/dsh-base"
+    version: "0.2.2-rc.1"
+    source: "builtin"
+    kind: official
+    reason: "Base composition: tools, sessions, prompts, skills plumbing."
+    added: "2026-11-11"
+
+  - name: "@deepseek-ai/dsh-web-app"
+    version: "0.2.2-rc.1"
+    source: "builtin"
+    kind: official
+    reason: "Web UI, chat, sidebar, settings and plugin pages."
+    added: "2026-11-11"
+
+  - name: "@local/pinned-workspaces"
+    version: "1.0.0"
+    source: "link:/Users/aaxyat/Documents/Projects/Deepseek/pinned-workspaces"
+    kind: personal
+    reason: "Pin workspaces so they lead the sidebar and stay one click away. Canonical source is harness/plugins/pinned-workspaces/."
+    added: "2026-11-11"
+
+  # Example of an installed third-party bundle:
+  # - name: "@scope/some-bundle"
+  #   version: "1.2.3"
+  #   source: "npm:@scope/some-bundle@1.2.3"
+  #   kind: third-party
+  #   reason: "Why it is installed and what it adds."
+  #   added: "YYYY-MM-DD"

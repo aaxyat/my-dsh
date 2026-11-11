@@ -1,0 +1,36 @@
+#!/bin/sh
+# my-dsh control entry point.
+#
+# Finds a Python 3 interpreter (DSH's bundled runtime first, then PATH) and
+# delegates to tools/dshctl.py. Override with DSHCTL_PYTHON=/path/to/python3.
+set -eu
+
+ROOT=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
+
+find_python() {
+  if [ -n "${DSHCTL_PYTHON:-}" ]; then
+    printf '%s\n' "$DSHCTL_PYTHON"
+    return 0
+  fi
+  for candidate in "$HOME"/.dsh/dsh-runtimes/*/dependencies/python/bin/python3; do
+    if [ -x "$candidate" ]; then
+      printf '%s\n' "$candidate"
+      return 0
+    fi
+  done
+  for candidate in python3 /opt/homebrew/bin/python3 /usr/local/bin/python3 /usr/bin/python3; do
+    if command -v "$candidate" >/dev/null 2>&1; then
+      command -v "$candidate"
+      return 0
+    fi
+  done
+  return 1
+}
+
+if ! PYTHON=$(find_python); then
+  echo "error: python3 not found." >&2
+  echo "       Install the Xcode Command Line Tools (xcode-select --install) or set DSHCTL_PYTHON=/path/to/python3." >&2
+  exit 127
+fi
+
+exec "$PYTHON" "$ROOT/tools/dshctl.py" "$@"

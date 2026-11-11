@@ -1,0 +1,40 @@
+# --- Secrets and credentials (never commit) ---
+.env
+.env.*
+!.env.example
+**/secrets/
+**/credentials*
+*.pem
+*.key
+*.p12
+*.pfx
+*.local.md
+AGENTS.local.md
+CLAUDE.local.md
+
+# --- DSH state that must not be versioned ---
+node_modules/
+**/pnpm-lock.yaml
+!harness/profile/**/pnpm-workspace.yaml
+**/compatibility.json
+
+# --- Generated machine-local data ---
+machine/local/
+
+# --- OS and editor noise ---
+.DS_Store
+Thumbs.db
+*.swp
+*~
+.idea/
+.vscode/
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# --- Logs and temporary output ---
+*.log
+tmp/

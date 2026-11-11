@@ -1,0 +1,35 @@
+# MCP server inventory.
+#
+# DSH mounts each MCP server as one `@deepseek-ai/dsh-mcp-client` plugin row in
+# the profile patch (harness/profile/desktop/cordis.patch.yml). This file is
+# the human/agent-readable inventory; it is NOT parsed by the app.
+#
+# Keep both in sync in the same commit. Credentials are referenced by
+# environment-variable name only; never write a token here.
+#
+# Tool names exposed to the model:  mcp__<serverName>__<toolName>
+# serverName: [A-Za-z0-9_-]{1,32}, unique per agent scope.
+
+version: 1
+
+servers: []
+
+# Example — stdio server:
+#
+#  - serverName: github
+#    transport: stdio
+#    command: npx
+#    args: ["-y", "@modelcontextprotocol/server-github"]
+#    env:
+#      GITHUB_TOKEN: "$GITHUB_TOKEN"
+#    enabled: false
+#    notes: "Read-only repository operations; token from the environment."
+#
+# Example — streamable HTTP server:
+#
+#  - serverName: docs
+#    transport: streamable-http
+#    url: "https://mcp.example.com/mcp"
+#    headers:
+#      Authorization: "Bearer $DOCS_MCP_TOKEN"
+#    enabled: false

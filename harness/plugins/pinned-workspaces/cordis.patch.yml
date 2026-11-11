@@ -1,0 +1,3 @@
+- insert:
+    - id: pinned-workspaces
+      name: '@local/pinned-workspaces'

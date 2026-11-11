@@ -1,0 +1,16 @@
+{
+  "name": "dsh-profile-desktop",
+  "private": true,
+  "dependencies": {
+    "@local/pinned-workspaces": "link:/Users/aaxyat/Documents/Projects/Deepseek/pinned-workspaces"
+  },
+  "dsh": {
+    "profile": {
+      "bundles": [
+        "@deepseek-ai/dsh-base",
+        "@deepseek-ai/dsh-web-app",
+        "@local/pinned-workspaces"
+      ]
+    }
+  }
+}
