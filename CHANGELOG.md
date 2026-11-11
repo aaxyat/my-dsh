@@ -9,6 +9,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); version
 
 - Nothing yet.
 
+### Fixed
+
+- `apply` warns when a copied profile references a personal plugin at a path that does not exist on the target machine.
+
 ## [0.1.0] - 2026-11-11
 
 ### Added
