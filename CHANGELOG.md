@@ -12,6 +12,14 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); version
 - Global operating rules: `harness/instructions/AGENTS.md` replaced with the user-supplied manual, plus `harness/instructions/RULES.md` (compact rules 1–7 for subagent prompts). Both deploy to `~/.agents/` as symlinks.
 - `docs/host-readiness.md`: audit of the rules' `/opt/agents`, helper, SSH and hook assumptions against this machine.
 - `machine/inventory.json` now records every instruction artifact, not just the first.
+- `harness/plugins/btw/`: personal Host + Web Client bundle implementing `/btw` read-only side questions — session-fork context, execution-time tool denial, in-flight parent snapshot, durable topic history, streaming/cancellation, and insert-into-composer. Built `lib/` is committed; provenance and Apache-2.0 notices are in the directory.
+- The live `desktop` profile links and selects `@local/btw`; `harness/manifest.json`, `harness/plugins/registry.yaml`, and `machine/inventory.json` record it.
+- `harness/plugins/parallel-mcp/`: configuration-only bundle mounting Parallel MCP anonymously as `mcp-parallel` (`web_search`, `web_fetch`, `web_decisions`, plus search utilities). No key or header is stored; `web_research` requires sign-in.
+- The live `desktop` profile links and selects `@local/parallel-mcp`; `include:mcp-parallel` is active, and `harness/mcp/servers.yaml` records the server.
+- `harness/plugins/playwright-mcp/`: configuration-only bundle for Playwright browser automation (`mcp__playwright__*`), plus `tools/provision_playwright_mcp.py` to install `@playwright/mcp` and Chromium under `/opt/agents/tools/playwright-mcp`. A live navigation to `example.com` succeeded.
+- `harness/plugins/context7-mcp/`: configuration-only bundle for Context7 library documentation (`resolve-library-id`, `query-docs`) over the anonymous remote endpoint.
+- `harness/plugins/cloudflare-mcp/`: configuration-only bundle for the Cloudflare documentation MCP server. The account API server (`mcp.cloudflare.com`) requires OAuth and is not mounted.
+- The live `desktop` profile links and selects all three bundles; `include:mcp-playwright`, `include:mcp-context7` and `include:mcp-cloudflare` are active.
 
 ### Added (agent workspace)
 
@@ -22,6 +30,9 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); version
 
 ### Fixed
 
+- Removed all `/agents` alias references; the durable workspace is addressed only as `/opt/agents`.
+- SSH auth uses Bitwarden via `~/.ssh/config` + `~/.zshenv`; `preflight` verifies the `IdentityAgent` instead of only `SSH_AUTH_SOCK`.
+- `newton` and `mediaserver` are treated as Tailscale MagicDNS names (resolved, no `Host` blocks); added the 3-minute `ControlPersist` policy with `mediaserver` exempt and verified the effective settings with `ssh -G`.
 - `apply` warns when a copied profile references a personal plugin at a path that does not exist on the target machine.
 
 ## [0.1.0] - 2026-11-11
