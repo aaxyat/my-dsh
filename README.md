@@ -1,0 +1,3 @@
+# my-dsh
+
+Initialized repository.
