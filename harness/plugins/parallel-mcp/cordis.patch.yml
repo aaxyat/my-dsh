@@ -1,0 +1,10 @@
+# Parallel MCP, anonymous. Replace the URL with
+# https://mcp.parallel.ai/mcp?login after a browser sign-in.
+- insert:
+    - id: mcp-parallel
+      name: '@deepseek-ai/dsh-mcp-client'
+      config:
+        serverName: parallel-mcp
+        transport: streamable-http
+        url: https://mcp.parallel.ai/mcp
+        failOnStartupError: true

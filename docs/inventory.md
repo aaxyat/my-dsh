@@ -13,8 +13,8 @@ Its purpose is provenance and drift detection: given a report from another machi
 | DSH desktop | `0.2.2-rc.1` |
 | Profile | `desktop` |
 | Runtime | node `24.21.0` · pnpm `11.28.5` · python `3.12.14` |
-| Bundles | `dsh-base`, `dsh-web-app`, `@local/pinned-workspaces` |
-| Profile dependencies | 1 (`@local/pinned-workspaces`, linked from `harness/plugins/`) |
+| Bundles | `dsh-base`, `dsh-web-app`, `@local/pinned-workspaces`, `@local/btw`, `@local/parallel-mcp`, `@local/playwright-mcp`, `@local/context7-mcp`, `@local/cloudflare-mcp` |
+| Profile dependencies | 6 (`@local/pinned-workspaces`, `@local/btw`, `@local/parallel-mcp`, `@local/playwright-mcp`, `@local/context7-mcp`, `@local/cloudflare-mcp`, linked from `harness/plugins/`) |
 | Personal skills | 0 |
 | Bundled skills | 12 |
 | User-global instructions | `AGENTS.md` + `RULES.md`, deployed as symlinks |

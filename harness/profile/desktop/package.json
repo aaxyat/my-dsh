@@ -2,14 +2,24 @@
   "name": "dsh-profile-desktop",
   "private": true,
   "dependencies": {
-    "@local/pinned-workspaces": "link:/Users/aaxyat/Documents/Projects/my-dsh/harness/plugins/pinned-workspaces"
+    "@local/btw": "link:/Users/aaxyat/Documents/Projects/my-dsh/harness/plugins/btw",
+    "@local/cloudflare-mcp": "link:/Users/aaxyat/Documents/Projects/my-dsh/harness/plugins/cloudflare-mcp",
+    "@local/context7-mcp": "link:/Users/aaxyat/Documents/Projects/my-dsh/harness/plugins/context7-mcp",
+    "@local/parallel-mcp": "link:/Users/aaxyat/Documents/Projects/my-dsh/harness/plugins/parallel-mcp",
+    "@local/pinned-workspaces": "link:/Users/aaxyat/Documents/Projects/my-dsh/harness/plugins/pinned-workspaces",
+    "@local/playwright-mcp": "link:/Users/aaxyat/Documents/Projects/my-dsh/harness/plugins/playwright-mcp"
   },
   "dsh": {
     "profile": {
       "bundles": [
         "@deepseek-ai/dsh-base",
         "@deepseek-ai/dsh-web-app",
-        "@local/pinned-workspaces"
+        "@local/pinned-workspaces",
+        "@local/btw",
+        "@local/parallel-mcp",
+        "@local/playwright-mcp",
+        "@local/context7-mcp",
+        "@local/cloudflare-mcp"
       ]
     }
   }

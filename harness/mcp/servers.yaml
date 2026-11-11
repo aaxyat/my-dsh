@@ -1,8 +1,11 @@
 # MCP server inventory.
 #
-# DSH mounts each MCP server as one `@deepseek-ai/dsh-mcp-client` plugin row in
-# the profile patch (harness/profile/desktop/cordis.patch.yml). This file is
-# the human/agent-readable inventory; it is NOT parsed by the app.
+# DSH mounts each MCP server as one `@deepseek-ai/dsh-mcp-client` plugin row.
+# A row may live directly in the profile patch
+# (harness/profile/desktop/cordis.patch.yml), or be inserted by a
+# configuration-only bundle under harness/plugins/<name>/ when it must be
+# installed into an already-running app. This file is the human/agent-readable
+# inventory; it is NOT parsed by the app.
 #
 # Keep both in sync in the same commit. Credentials are referenced by
 # environment-variable name only; never write a token here.
@@ -12,7 +15,39 @@
 
 version: 1
 
-servers: []
+servers:
+  - serverName: parallel-mcp
+    transport: streamable-http
+    url: "https://mcp.parallel.ai/mcp"
+    enabled: true
+    notes: "Parallel MCP, anonymous. Exposes web_search, web_fetch and web_decisions; no web_research without browser sign-in. Delivered by the @local/parallel-mcp configuration-only bundle (patch id mcp-parallel)."
+
+  - serverName: playwright
+    transport: stdio
+    command: "/Users/aaxyat/.dsh/dsh-runtimes/dsh-primary-runtime/dependencies/node/bin/node"
+    args:
+      - "/opt/agents/tools/playwright-mcp/node_modules/@playwright/mcp/cli.js"
+      - "--headless"
+      - "--browser"
+      - "chromium"
+      - "--isolated"
+    cwd: "/opt/agents/tools/playwright-mcp"
+    env:
+      PLAYWRIGHT_BROWSERS_PATH: "/opt/agents/tools/playwright-mcp/.browsers"
+    enabled: true
+    notes: "Playwright browser automation. Machine-local tool provisioned by tools/provision_playwright_mcp.py; delivered by the @local/playwright-mcp bundle (patch id mcp-playwright). Paths are machine-specific."
+
+  - serverName: context7
+    transport: streamable-http
+    url: "https://mcp.context7.com/mcp"
+    enabled: true
+    notes: "Context7 library documentation, anonymous (lower rate limits; an API key is optional). Delivered by the @local/context7-mcp bundle (patch id mcp-context7)."
+
+  - serverName: cloudflare
+    transport: streamable-http
+    url: "https://docs.mcp.cloudflare.com/mcp"
+    enabled: true
+    notes: "Cloudflare documentation MCP, anonymous. The account API server at https://mcp.cloudflare.com/mcp needs OAuth and is not mounted. Delivered by the @local/cloudflare-mcp bundle (patch id mcp-cloudflare)."
 
 # Example — stdio server:
 #

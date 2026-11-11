@@ -163,6 +163,8 @@ Each server is one plugin instance in the profile patch:
 
 Tool names become `mcp__<serverName>__<toolName>`; `serverName` is unique per agent scope and limited to `[A-Za-z0-9_-]{1,32}`. HTTP transport uses `url` + `headers` instead of `command`/`args`/`env`. Credentials stay in the environment or DSH's credential store — never in the patch file.
 
+A row can live directly in the profile patch, or be inserted by a **configuration-only bundle** under `harness/plugins/<name>/`. Use the bundle form when the server must be installed into an already-running desktop app: the plugin manager applies a bundle live, while a new profile-patch row is read at startup. The `*-mcp/` bundles ([`parallel-mcp/`](../harness/plugins/parallel-mcp/), [`playwright-mcp/`](../harness/plugins/playwright-mcp/), [`context7-mcp/`](../harness/plugins/context7-mcp/), [`cloudflare-mcp/`](../harness/plugins/cloudflare-mcp/)) are examples; each bundle patch inserts the same `dsh-mcp-client` row.
+
 ## 8. Credentials
 
 `~/.dsh/.credentials.yaml` is written `0600` by DSH and holds named references such as `DEEPSEEK_API_KEY` and `OPENCODE_GO_API_KEY`. Provider rows in the profile refer to them by **environment-variable name** (`apiKeyEnv: OPENCODE_GO_API_KEY`).

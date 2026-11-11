@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "generatedBy": "bin/dsh capture",
-  "capturedAt": "2026-11-11T15:47:36Z",
+  "capturedAt": "2026-11-11T17:49:32Z",
   "host": {
     "system": "Darwin",
     "release": "27.0.0",
@@ -27,21 +27,76 @@
     "bundles": [
       "@deepseek-ai/dsh-base",
       "@deepseek-ai/dsh-web-app",
-      "@local/pinned-workspaces"
+      "@local/pinned-workspaces",
+      "@local/btw",
+      "@local/parallel-mcp",
+      "@local/playwright-mcp",
+      "@local/context7-mcp",
+      "@local/cloudflare-mcp"
     ],
     "dependencies": {
-      "@local/pinned-workspaces": "link:/Users/aaxyat/Documents/Projects/my-dsh/harness/plugins/pinned-workspaces"
+      "@local/btw": "link:/Users/aaxyat/Documents/Projects/my-dsh/harness/plugins/btw",
+      "@local/cloudflare-mcp": "link:/Users/aaxyat/Documents/Projects/my-dsh/harness/plugins/cloudflare-mcp",
+      "@local/context7-mcp": "link:/Users/aaxyat/Documents/Projects/my-dsh/harness/plugins/context7-mcp",
+      "@local/parallel-mcp": "link:/Users/aaxyat/Documents/Projects/my-dsh/harness/plugins/parallel-mcp",
+      "@local/pinned-workspaces": "link:/Users/aaxyat/Documents/Projects/my-dsh/harness/plugins/pinned-workspaces",
+      "@local/playwright-mcp": "link:/Users/aaxyat/Documents/Projects/my-dsh/harness/plugins/playwright-mcp"
     }
   },
   "plugins": {
     "installedDependencies": [
-      "@local/pinned-workspaces"
+      "@local/btw",
+      "@local/cloudflare-mcp",
+      "@local/context7-mcp",
+      "@local/parallel-mcp",
+      "@local/pinned-workspaces",
+      "@local/playwright-mcp"
     ],
     "thirdParty": [],
     "personal": [
       {
         "id": "pinned-workspaces",
         "package": "@local/pinned-workspaces",
+        "installed": true,
+        "enabled": true,
+        "install": "link",
+        "deployed": true
+      },
+      {
+        "id": "btw",
+        "package": "@local/btw",
+        "installed": true,
+        "enabled": true,
+        "install": "link",
+        "deployed": true
+      },
+      {
+        "id": "parallel-mcp",
+        "package": "@local/parallel-mcp",
+        "installed": true,
+        "enabled": true,
+        "install": "link",
+        "deployed": true
+      },
+      {
+        "id": "playwright-mcp",
+        "package": "@local/playwright-mcp",
+        "installed": true,
+        "enabled": true,
+        "install": "link",
+        "deployed": true
+      },
+      {
+        "id": "context7-mcp",
+        "package": "@local/context7-mcp",
+        "installed": true,
+        "enabled": true,
+        "install": "link",
+        "deployed": true
+      },
+      {
+        "id": "cloudflare-mcp",
+        "package": "@local/cloudflare-mcp",
         "installed": true,
         "enabled": true,
         "install": "link",
@@ -95,8 +150,8 @@
       "sshd-apply",
       "undo-rm"
     ],
-    "provisionedAt": "2026-11-11T15:46:15Z",
-    "sourceCommit": "86e02cbea753e095133fb46334b41498442369c7"
+    "provisionedAt": "2026-11-11T15:58:15Z",
+    "sourceCommit": "ed4155df5f2ad80e1eb9a1211e15b982f6dae018"
   },
   "credentials": {
     "store": "~/.dsh/.credentials.yaml",
@@ -112,20 +167,20 @@
       "bytes": 6519
     },
     "harness/profile/desktop/package.json": {
-      "sha256": "a4a5531cfc370bf00fcc2df8740ca2616a342779257045481fca81345da793a8",
-      "bytes": 363
+      "sha256": "d09dc6a806bf018d2331702984a65e7749fcaec15b2325be8e91f8709dc0e6d5",
+      "bytes": 1023
     },
     "harness/profile/desktop/pnpm-workspace.yaml": {
       "sha256": "ae7c5b68e2f157528e62885804e69e88583897b775e03c86fcbe52feaf498aba",
       "bytes": 61
     },
     "harness/instructions/AGENTS.md": {
-      "sha256": "ff318630b9f185e261b63d9cc28cf235dc062bd61d485e0ac13a3bf6d7018d42",
-      "bytes": 15003
+      "sha256": "51d850c43e5d4f9741fcc224143acdd6b20e4f5637830fc5425294a08259adfb",
+      "bytes": 14973
     },
     "harness/instructions/RULES.md": {
-      "sha256": "7b7e51d043ca488c86d1342fb387083a4bb8cea72b04f66a3552b3c7314988dc",
-      "bytes": 7517
+      "sha256": "537ab53aa7b375f37dbf812582e8593d99bcdeed9b99a201309a634fc1e49641",
+      "bytes": 7500
     }
   }
 }

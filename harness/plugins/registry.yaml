@@ -35,6 +35,41 @@ bundles:
     reason: "Pin workspaces so they lead the sidebar and stay one click away. Canonical source is harness/plugins/pinned-workspaces/."
     added: "2026-11-11"
 
+  - name: "@local/btw"
+    version: "0.1.0"
+    source: "link:harness/plugins/btw"
+    kind: personal
+    reason: "Read-only /btw side questions in the Web composer: session-fork context, execution-time tool denial, durable topic history. Derived from dsh-btw-marginalia (Apache-2.0); canonical source is harness/plugins/btw/."
+    added: "2026-11-11"
+
+  - name: "@local/parallel-mcp"
+    version: "1.0.0"
+    source: "link:harness/plugins/parallel-mcp"
+    kind: personal
+    reason: "Configuration-only bundle that mounts Parallel MCP (anonymous) as mcp-parallel for web search, extract and Parallel Decisions. Canonical source is harness/plugins/parallel-mcp/."
+    added: "2026-11-11"
+
+  - name: "@local/playwright-mcp"
+    version: "1.0.0"
+    source: "link:harness/plugins/playwright-mcp"
+    kind: personal
+    reason: "Configuration-only bundle for Playwright browser automation; requires the machine-local tool under /opt/agents/tools/playwright-mcp."
+    added: "2026-11-11"
+
+  - name: "@local/context7-mcp"
+    version: "1.0.0"
+    source: "link:harness/plugins/context7-mcp"
+    kind: personal
+    reason: "Configuration-only bundle mounting Context7 library documentation (anonymous remote endpoint)."
+    added: "2026-11-11"
+
+  - name: "@local/cloudflare-mcp"
+    version: "1.0.0"
+    source: "link:harness/plugins/cloudflare-mcp"
+    kind: personal
+    reason: "Configuration-only bundle mounting the Cloudflare documentation MCP server (anonymous); account API access needs OAuth."
+    added: "2026-11-11"
+
   # Example of an installed third-party bundle:
   # - name: "@scope/some-bundle"
   #   version: "1.2.3"

@@ -1,0 +1,21 @@
+# Playwright MCP, machine-local stdio server.
+#
+# The tool and Chromium are installed under /opt/agents/tools/playwright-mcp by
+# `tools/provision_playwright_mcp.py`; the paths below are machine-specific.
+- insert:
+    - id: mcp-playwright
+      name: '@deepseek-ai/dsh-mcp-client'
+      config:
+        serverName: playwright
+        transport: stdio
+        command: "/Users/aaxyat/.dsh/dsh-runtimes/dsh-primary-runtime/dependencies/node/bin/node"
+        args:
+          - "/opt/agents/tools/playwright-mcp/node_modules/@playwright/mcp/cli.js"
+          - "--headless"
+          - "--browser"
+          - "chromium"
+          - "--isolated"
+        cwd: "/opt/agents/tools/playwright-mcp"
+        env:
+          PLAYWRIGHT_BROWSERS_PATH: "/opt/agents/tools/playwright-mcp/.browsers"
+        failOnStartupError: true

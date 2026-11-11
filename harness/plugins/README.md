@@ -9,7 +9,13 @@ Two very different things are tracked here:
 
 ## Personal bundle anatomy
 
-Use [`pinned-workspaces/`](pinned-workspaces/) as the reference implementation.
+Use [`pinned-workspaces/`](pinned-workspaces/) as the reference implementation for a hand-written
+bundle. [`btw/`](btw/) is the reference for a TypeScript bundle: it commits its built `lib/` output
+so installation needs no Node toolchain. See [btw/README.md](btw/README.md) for its build and test
+commands. The `*-mcp/` bundles ([`parallel-mcp/`](parallel-mcp/), [`playwright-mcp/`](playwright-mcp/),
+[`context7-mcp/`](context7-mcp/), [`cloudflare-mcp/`](cloudflare-mcp/)) are **configuration-only**:
+they ship no Host or Client entry, only a patch that inserts an MCP client row. Use that shape when
+an MCP server must be installed into an already-running app.
 
 ```
 <name>/

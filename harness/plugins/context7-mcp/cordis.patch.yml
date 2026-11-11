@@ -1,0 +1,10 @@
+# Context7 MCP, anonymous remote endpoint.
+# Add an Authorization header only after a key is stored outside this repository.
+- insert:
+    - id: mcp-context7
+      name: '@deepseek-ai/dsh-mcp-client'
+      config:
+        serverName: context7
+        transport: streamable-http
+        url: https://mcp.context7.com/mcp
+        failOnStartupError: true

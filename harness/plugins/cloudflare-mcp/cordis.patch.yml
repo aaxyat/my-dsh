@@ -1,0 +1,11 @@
+# Cloudflare documentation MCP, anonymous remote endpoint.
+# Account-wide API access uses https://mcp.cloudflare.com/mcp and OAuth; DSH
+# does not provide an MCP OAuth flow, so this bundle uses the docs server.
+- insert:
+    - id: mcp-cloudflare
+      name: '@deepseek-ai/dsh-mcp-client'
+      config:
+        serverName: cloudflare
+        transport: streamable-http
+        url: https://docs.mcp.cloudflare.com/mcp
+        failOnStartupError: true

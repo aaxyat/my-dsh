@@ -1,0 +1,24 @@
+@local/btw
+Copyright 2026 the my-dsh contributors
+
+This plugin is a renamed, locally maintained derivative of
+dsh-btw-marginalia (https://github.com/LTP414/dsh-btw-marginalia),
+Copyright 2026 the dsh-btw-marginalia contributors, licensed under the
+Apache License, Version 2.0. The upstream notice and the notices of the
+projects that informed its design are reproduced below.
+
+---
+
+dsh-btw-marginalia
+Copyright 2026 the dsh-btw-marginalia contributors
+
+This product includes design research and selected implementation patterns
+derived from the following open-source projects:
+
+  MichengAI/dsh-btw            Apache-2.0
+  WLV-ZEDD/dsh-btw             MIT
+  kaieye/dsh-AIR               MIT
+  can1357/oh-my-pi             MIT
+
+The original code of this project is licensed under the Apache License,
+Version 2.0. See LICENSE and THIRD_PARTY_NOTICES.md for details.

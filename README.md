@@ -2,7 +2,7 @@
 
 Personal, portable source of truth for my [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) (DSH) setup — instructions, profile configuration, skills, plugins, MCP servers and the tooling that reproduces them on a new Mac.
 
-This repository is configuration, not application code. It answers one question: **what do I need to copy onto a fresh machine to get my harness back?**
+This repository is configuration and the small personal bundles it deploys, not a standalone application. It answers one question: **what do I need to copy onto a fresh machine to get my harness back?**
 
 ---
 
@@ -56,6 +56,7 @@ If you edit the repo first, run `./bin/dsh apply` to deploy, then `./bin/dsh doc
 | `./bin/dsh link` | Create only the symlinks (instructions + skills). Use after editing a skill. |
 | `./bin/dsh apply --with-plugins` | Also install personal plugins declared `enabled: true` in the manifest. Requires a DSH restart. |
 | `python3 tools/provision_agents.py` | Create/update `/opt/agents` (layout, helpers, lock). Idempotent; `--dry-run` first. |
+| `python3 tools/provision_playwright_mcp.py` | Install/update the machine-local Playwright MCP server and Chromium under `/opt/agents/tools/playwright-mcp`. Idempotent; `--dry-run` first. |
 
 `make check`, `make capture`, `make apply`, `make link`, `make doctor` are equivalent.
 
@@ -69,6 +70,7 @@ CHANGELOG.md               # human-readable history
 bin/dsh                    # the only entry point you need
 tools/dshctl.py            # implementation of capture/apply/link/check/doctor
 tools/provision_agents.py  # installs agents/ into /opt/agents
+tools/provision_playwright_mcp.py # installs Playwright MCP + Chromium for the playwright row
 agents/                    # durable agent workspace source (helpers, layout, README)
 docs/                      # architecture, workflow, restore, secrets, ADRs, templates
 harness/
@@ -102,7 +104,7 @@ Not managed: DSH application binaries, sessions, runtime toolchains, credentials
 ## Status
 
 Bootstrapped **2026-11-11** against DSH desktop **0.2.2-rc.1** on macOS (arm64), profile `desktop`.
-The global agent rules (`AGENTS.md` + `RULES.md`) are deployed from this repo and load in new sessions. One personal plugin (`@local/pinned-workspaces`) is installed from `harness/plugins/`. `/opt/agents` is provisioned with 10 helpers and a locked `bin/`; `preflight` exits 0 with warnings for the still-missing SSH config, `gitleaks`, hook chain and retention job — see [docs/host-readiness.md](docs/host-readiness.md).
+The global agent rules (`AGENTS.md` + `RULES.md`) are deployed from this repo and load in new sessions. Six personal bundles are installed from `harness/plugins/`: `@local/pinned-workspaces` (sidebar pins), `@local/btw` (read-only `/btw` side questions in the Web composer), and the configuration-only MCP bundles `@local/parallel-mcp`, `@local/playwright-mcp`, `@local/context7-mcp`, and `@local/cloudflare-mcp`. `/opt/agents` is provisioned with 10 helpers and a locked `bin/`; `preflight` exits 0 with warnings for the still-missing SSH config, `gitleaks`, hook chain and retention job — see [docs/host-readiness.md](docs/host-readiness.md).
 
 ## Documentation
 
@@ -115,6 +117,11 @@ The global agent rules (`AGENTS.md` + `RULES.md`) are deployed from this repo an
 - [docs/host-readiness.md](docs/host-readiness.md) — rule assumptions vs. this machine
 - [docs/troubleshooting.md](docs/troubleshooting.md) — common failures
 - [docs/decisions/](docs/decisions/) — architecture decision records
+- [harness/plugins/btw/README.md](harness/plugins/btw/README.md) — `/btw` side questions: design, build, limits
+- [harness/plugins/parallel-mcp/README.md](harness/plugins/parallel-mcp/README.md) — Parallel web search setup and sign-in upgrade
+- [harness/plugins/playwright-mcp/README.md](harness/plugins/playwright-mcp/README.md) — Playwright browser automation setup
+- [harness/plugins/context7-mcp/README.md](harness/plugins/context7-mcp/README.md) — Context7 library documentation
+- [harness/plugins/cloudflare-mcp/README.md](harness/plugins/cloudflare-mcp/README.md) — Cloudflare documentation and the OAuth API-server caveat
 - [HANDOFF.md](HANDOFF.md) — what to do next
 
 ## License

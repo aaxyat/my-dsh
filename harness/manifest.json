@@ -72,12 +72,57 @@
       "enabled": true,
       "target": "~/.dsh/profiles/desktop/node_modules/@local/pinned-workspaces",
       "notes": "Client-only Web bundle that pins workspaces to the top of the sidebar. Canonical source is this directory. Installed in the desktop profile as a link: dependency; `bin/dsh apply --with-plugins` links this directory on a target machine and selects the bundle. Restart DSH afterwards."
+    },
+    {
+      "id": "btw",
+      "package": "@local/btw",
+      "source": "harness/plugins/btw",
+      "install": "link",
+      "enabled": true,
+      "target": "~/.dsh/profiles/desktop/node_modules/@local/btw",
+      "notes": "Host + Web Client bundle implementing /btw side questions: fork the current session, answer read-only in a composer bubble, persist topics, and never write to the main transcript. Built artifacts live in lib/; rebuild with the bundled Node/pnpm and commit lib/ when src/ changes. Installed as a link: dependency by `bin/dsh apply --with-plugins`; restart DSH afterwards."
+    },
+    {
+      "id": "parallel-mcp",
+      "package": "@local/parallel-mcp",
+      "source": "harness/plugins/parallel-mcp",
+      "install": "link",
+      "enabled": true,
+      "target": "~/.dsh/profiles/desktop/node_modules/@local/parallel-mcp",
+      "notes": "Configuration-only bundle that inserts the Parallel MCP client row (serverName parallel-mcp, anonymous streamable-http endpoint). Ships no Host or Client code; installed as a link: dependency by `bin/dsh apply --with-plugins` and selected in dsh.profile.bundles."
+    },
+    {
+      "id": "playwright-mcp",
+      "package": "@local/playwright-mcp",
+      "source": "harness/plugins/playwright-mcp",
+      "install": "link",
+      "enabled": true,
+      "target": "~/.dsh/profiles/desktop/node_modules/@local/playwright-mcp",
+      "notes": "Configuration-only bundle that inserts the Playwright MCP stdio row (serverName playwright). Requires the machine-local tool at /opt/agents/tools/playwright-mcp, provisioned by `tools/provision_playwright_mcp.py`; the row contains absolute runtime and tool paths."
+    },
+    {
+      "id": "context7-mcp",
+      "package": "@local/context7-mcp",
+      "source": "harness/plugins/context7-mcp",
+      "install": "link",
+      "enabled": true,
+      "target": "~/.dsh/profiles/desktop/node_modules/@local/context7-mcp",
+      "notes": "Configuration-only bundle that inserts the Context7 MCP client row (serverName context7, anonymous remote endpoint). No API key is stored."
+    },
+    {
+      "id": "cloudflare-mcp",
+      "package": "@local/cloudflare-mcp",
+      "source": "harness/plugins/cloudflare-mcp",
+      "install": "link",
+      "enabled": true,
+      "target": "~/.dsh/profiles/desktop/node_modules/@local/cloudflare-mcp",
+      "notes": "Configuration-only bundle that inserts the Cloudflare documentation MCP client row (serverName cloudflare). The account API server needs OAuth and is not mounted."
     }
   ],
   "mcp": {
     "source": "harness/mcp/servers.yaml",
     "deployedIn": "harness/profile/desktop/cordis.patch.yml",
-    "notes": "MCP servers are plugin rows in the profile patch. servers.yaml is the human inventory that must stay in sync with it."
+    "notes": "MCP servers are plugin rows, either directly in the profile patch or inserted by a configuration-only bundle under harness/plugins/. servers.yaml is the human inventory that must stay in sync with both."
   },
   "excluded": [
     "~/.dsh/.credentials.yaml",

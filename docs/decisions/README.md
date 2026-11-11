@@ -8,6 +8,7 @@ Short, numbered, immutable records of decisions that shape this repository. A la
 | [0002](0002-symlink-read-only-copy-app-written.md) | Symlink read-only artifacts, copy app-written files | Accepted |
 | [0003](0003-secrets-never-committed.md) | Secrets never enter the repository | Accepted |
 | [0004](0004-json-manifest-stdlib-tooling.md) | JSON manifest and stdlib-only tooling | Accepted |
+| [0005](0005-btw-plugin-fork.md) | Vendor the Apache-2.0 `/btw` implementation as a personal bundle | Accepted |
 
 ## Writing one
 
