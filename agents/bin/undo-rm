@@ -1,0 +1,103 @@
+#!/usr/bin/env python3
+"""Restore a soft-deleted batch produced by /opt/agents/bin/rm."""
+
+import argparse
+import json
+import os
+import shutil
+import sys
+from datetime import datetime, timezone
+from pathlib import Path
+
+WORKSPACE = Path("/opt/agents")
+TRASH = WORKSPACE / "data" / ".trash"
+AUDIT = WORKSPACE / "logs" / "rm-audit.log"
+UID = os.getuid()
+
+
+def audit(record):
+    AUDIT.parent.mkdir(parents=True, exist_ok=True)
+    line = json.dumps(record, ensure_ascii=False, sort_keys=True) + "\n"
+    fd = os.open(str(AUDIT), os.O_APPEND | os.O_CREAT | os.O_WRONLY, 0o600)
+    try:
+        os.write(fd, line.encode("utf-8", "surrogateescape"))
+    finally:
+        os.close(fd)
+
+
+def batches():
+    if not TRASH.is_dir():
+        return []
+    found = []
+    for meta in sorted(TRASH.glob("*/*/meta.json")):
+        try:
+            with open(meta, "r", encoding="utf-8") as handle:
+                data = json.load(handle)
+        except (OSError, ValueError):
+            continue
+        found.append((meta.parent.name, data, meta.parent))
+    return found
+
+
+def main(argv=None):
+    parser = argparse.ArgumentParser(prog="undo-rm", description=__doc__)
+    parser.add_argument("--list", action="store_true", help="list available batches")
+    parser.add_argument("id", nargs="?", help="batch id printed by rm")
+    args = parser.parse_args(argv)
+
+    available = batches()
+    if args.list or not args.id:
+        if not available:
+            print("no soft-deleted batches")
+            return 0
+        for identifier, data, _path in available:
+            print(f"{identifier}  {data.get('created', '?')}  "
+                  f"{len(data.get('entries', []))} item(s)  quote={data.get('quote', '')!r}")
+        return 0
+
+    match = [item for item in available if item[0] == args.id]
+    if not match:
+        print(f"error: no batch with id {args.id}", file=sys.stderr)
+        return 1
+    identifier, data, batch = match[0]
+
+    entries = data.get("entries", [])
+    for entry in entries:
+        if not os.path.lexists(entry["stored"]):
+            print(f"error: stored item missing: {entry['stored']}", file=sys.stderr)
+            return 1
+        if os.path.lexists(entry["original"]):
+            print(f"error: original path exists again: {entry['original']}", file=sys.stderr)
+            return 1
+
+    for entry in entries:
+        parent = os.path.dirname(entry["original"])
+        if parent:
+            os.makedirs(parent, exist_ok=True)
+        shutil.move(entry["stored"], entry["original"])
+        print(f"restored {entry['original']}")
+
+    meta_path = batch / "meta.json"
+    try:
+        os.unlink(meta_path)
+        os.rmdir(batch)
+        parent = batch.parent
+        try:
+            os.rmdir(parent)
+        except OSError:
+            pass
+    except OSError as exc:
+        print(f"warning: restored but could not clean {batch}: {exc}", file=sys.stderr)
+
+    audit({"at": datetime.now(timezone.utc).isoformat(), "action": "undo-rm",
+           "id": identifier, "count": len(entries), "uid": UID,
+           "entries": [e["original"] for e in entries]})
+    print(f"undid {identifier} ({len(entries)} item(s))")
+    return 0
+
+
+if __name__ == "__main__":
+    try:
+        sys.exit(main())
+    except KeyboardInterrupt:
+        sys.exit(130)

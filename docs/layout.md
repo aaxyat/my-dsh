@@ -19,7 +19,13 @@ One artifact, one home. If something does not fit the table below, write the pro
 ├── bin/
 │   └── dsh                       CLI entry point (finds Python, execs tools)
 ├── tools/
-│   └── dshctl.py                 capture / apply / link / check / doctor
+│   ├── dshctl.py                 capture / apply / link / check / doctor
+│   └── provision_agents.py       install agents/ into /opt/agents (idempotent)
+├── agents/
+│   ├── README.md                 workspace layout, helper reference, activation
+│   └── bin/                      preflight, manifest, rm, gate-rm, undo-rm,
+│                                 git-snapshot, ssh-probe, ssh-verify,
+│                                 sshd-apply, retention
 ├── docs/
 │   ├── architecture.md           DSH load semantics (authoritative reference)
 │   ├── layout.md                 this file
@@ -73,6 +79,7 @@ One artifact, one home. If something does not fit the table below, write the pro
 | A model/provider | `harness/profile/desktop/cordis.patch.yml` (`llm-*` row) | `apply` |
 | A tool policy / permission default | `harness/profile/desktop/cordis.patch.yml` | `apply`, restart |
 | New automation for this repo | `tools/dshctl.py` subcommand + `bin/dsh` | update README/workflow |
+| A machine-level helper for `/opt/agents` | `agents/bin/<name>` + `agents/README.md` | `python3 tools/provision_agents.py --force` |
 | A structural decision | `docs/decisions/NNNN-slug.md` | link from HANDOFF |
 | Machine facts | `machine/inventory.json` (generated) | `./bin/dsh capture` |
 | Anything secret | **nowhere in this repo** | see `docs/secrets.md` |

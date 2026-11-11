@@ -18,6 +18,7 @@ Its purpose is provenance and drift detection: given a report from another machi
 | Personal skills | 0 |
 | Bundled skills | 12 |
 | User-global instructions | `AGENTS.md` + `RULES.md`, deployed as symlinks |
+| Agent workspace | `/opt/agents` · 10 helpers · `bin/` locked |
 | Credential refs (names only) | `DEEPSEEK_API_KEY`, `OPENCODE_GO_API_KEY` |
 | Managed files recorded | 5 |
 
@@ -38,6 +39,7 @@ Bundled skills visible to the model on this install: `agent-experience`, `cordis
 | `plugins` | Installed dependencies, third-party list, and each personal plugin's install/enable/deploy state. |
 | `skills` | Personal skill names, bundled skill names, user skill root. |
 | `instructions` | List of instruction artifacts: repo source, deploy target, and whether each was linked at capture time. |
+| `agentWorkspace` | Source tree, target path, installed helpers, provisioning timestamp and source commit. |
 | `credentials` | Credential store path and **names only**. Values are never read into the file. |
 | `managedFiles` | SHA-256 and byte size for every deployed source file (profile files, global instructions, skill files). |
 

@@ -1,0 +1,21 @@
+#!/bin/sh
+# Fresh SSH connection that bypasses ControlMaster. Exit status is ssh's.
+set -u
+
+if [ "$#" -lt 1 ]; then
+  echo "usage: ssh-verify HOST [COMMAND]" >&2
+  exit 2
+fi
+host=$1
+shift
+command=${*:-true}
+
+ssh -o BatchMode=yes -o ConnectTimeout=5 -o LogLevel=ERROR \
+    -o ControlMaster=no -o ControlPath=none "$host" "$command"
+status=$?
+if [ "$status" -eq 0 ]; then
+  echo "ssh-verify: OK $host"
+else
+  echo "ssh-verify: FAILED $host (exit $status)" >&2
+fi
+exit "$status"

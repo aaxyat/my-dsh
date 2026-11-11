@@ -1,0 +1,4 @@
+#!/bin/sh
+# Gate-class deletion: requires the user's quoted instruction.
+set -eu
+exec /opt/agents/bin/rm --require-quote "$@"

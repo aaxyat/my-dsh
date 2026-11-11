@@ -1,0 +1,159 @@
+#!/usr/bin/env python3
+"""Enumerate paths into a NUL-delimited manifest with hashes and blast radius."""
+
+import argparse
+import hashlib
+import json
+import os
+import re
+import stat
+import sys
+from datetime import datetime, timezone
+from pathlib import Path
+
+WORKSPACE = Path("/opt/agents")
+TMP = WORKSPACE / "tmp"
+
+
+def iso_now():
+    return datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
+
+
+def sha256_file(path):
+    digest = hashlib.sha256()
+    with open(path, "rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def tree_summary(path):
+    """Walk without following symlinks; return counts, bytes and a metadata digest."""
+    files = dirs = links = other = 0
+    total = 0
+    digest = hashlib.sha256()
+    stack = [path]
+    while stack:
+        current = stack.pop()
+        try:
+            entries = sorted(os.scandir(current), key=lambda e: e.name)
+        except OSError as exc:
+            digest.update(f"!{current}:{exc.errno}".encode())
+            continue
+        for entry in entries:
+            rel = os.path.relpath(entry.path, path)
+            try:
+                info = entry.stat(follow_symlinks=False)
+            except OSError:
+                continue
+            digest.update(rel.encode("utf-8", "surrogateescape"))
+            digest.update(str(info.st_size).encode())
+            if entry.is_symlink():
+                links += 1
+                total += info.st_size
+                digest.update(b"L" + os.readlink(entry.path).encode("utf-8", "surrogateescape"))
+            elif entry.is_dir(follow_symlinks=False):
+                dirs += 1
+                stack.append(entry.path)
+            elif entry.is_file(follow_symlinks=False):
+                files += 1
+                total += info.st_size
+            else:
+                other += 1
+                total += info.st_size
+    return {"files": files, "dirs": dirs, "symlinks": links, "other": other,
+            "bytes": total, "digest": digest.hexdigest()}
+
+
+def describe(path):
+    info = os.lstat(path)
+    if stat.S_ISLNK(info.st_mode):
+        return {"path": path, "type": "symlink", "size": info.st_size,
+                "sha256": "", "target": os.readlink(path), "missing": False}
+    if stat.S_ISREG(info.st_mode):
+        return {"path": path, "type": "file", "size": info.st_size,
+                "sha256": sha256_file(path), "target": "", "missing": False}
+    if stat.S_ISDIR(info.st_mode):
+        summary = tree_summary(path)
+        return {"path": path, "type": "dir", "size": summary["bytes"],
+                "sha256": summary["digest"], "target": "", "missing": False,
+                "tree": summary}
+    return {"path": path, "type": "other", "size": info.st_size,
+            "sha256": "", "target": "", "missing": False}
+
+
+def main(argv=None):
+    parser = argparse.ArgumentParser(prog="manifest", description=__doc__)
+    parser.add_argument("--task", required=True, help="short task name used for the file name")
+    parser.add_argument("--out", help="output path (default /opt/agents/tmp/<task>.manifest)")
+    parser.add_argument("paths", nargs="+", help="paths to enumerate (no globs; pass literal paths)")
+    args = parser.parse_args(argv)
+
+    if not re.fullmatch(r"[A-Za-z0-9._-]+", args.task):
+        parser.error("--task may contain only letters, digits, dot, underscore and dash")
+    if not TMP.is_dir():
+        parser.error(f"{TMP} is missing; provision the workspace first")
+
+    out = Path(args.out) if args.out else TMP / f"{args.task}.manifest"
+    entries = []
+    missing = 0
+    for raw in args.paths:
+        path = os.path.abspath(os.path.expanduser(raw))
+        if not os.path.lexists(path):
+            entries.append({"path": path, "type": "missing", "size": 0,
+                            "sha256": "", "target": "", "missing": True})
+            missing += 1
+            continue
+        entries.append(describe(path))
+
+    counts = {"files": sum(1 for e in entries if e["type"] == "file"),
+              "dirs": sum(1 for e in entries if e["type"] == "dir"),
+              "symlinks": sum(1 for e in entries if e["type"] == "symlink"),
+              "other": sum(1 for e in entries if e["type"] == "other"),
+              "missing": missing}
+    total_bytes = sum(e["size"] for e in entries)
+
+    out.parent.mkdir(parents=True, exist_ok=True)
+    tmp = out.with_suffix(out.suffix + ".tmp")
+    with open(tmp, "wb") as handle:
+        header = (
+            "MYDSH-MANIFEST 1\n"
+            f"task\t{args.task}\n"
+            f"created\t{iso_now()}\n"
+            f"count\t{len(entries)}\n"
+            f"missing\t{missing}\n"
+            "---\n"
+        )
+        handle.write(header.encode("utf-8"))
+        for entry in entries:
+            for field in (entry["path"], entry["type"], str(entry["size"]),
+                          entry["sha256"], entry["target"]):
+                handle.write(field.encode("utf-8", "surrogateescape") + b"\0")
+    os.replace(tmp, out)
+    os.chmod(out, 0o600)
+
+    sidecar = out.with_suffix(".json")
+    with open(sidecar, "w", encoding="utf-8") as handle:
+        json.dump({"task": args.task, "created": iso_now(), "counts": counts,
+                   "totalBytes": total_bytes, "entries": entries}, handle, indent=2)
+        handle.write("\n")
+    os.chmod(sidecar, 0o600)
+
+    manifest_sha = sha256_file(out)
+    print(f"manifest: {out}")
+    print(f"sha256:   {manifest_sha}")
+    print(f"blast radius: {len(entries)} path(s): {counts['files']} file(s), "
+          f"{counts['dirs']} dir(s), {counts['symlinks']} symlink(s), "
+          f"{counts['other']} other, {counts['missing']} missing; {total_bytes} byte(s)")
+    print("loss: irreversible unless the caller captured a verified rollback")
+    if missing:
+        print("error: one or more paths do not exist", file=sys.stderr)
+        return 1
+    return 0
+
+
+if __name__ == "__main__":
+    try:
+        sys.exit(main())
+    except KeyboardInterrupt:
+        sys.exit(130)

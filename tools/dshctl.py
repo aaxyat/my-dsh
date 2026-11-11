@@ -46,6 +46,7 @@ REQUIRED_DOCS = [
     "harness/mcp/servers.yaml",
     "harness/tools/README.md",
     "harness/instructions/RULES.md",
+    "agents/README.md",
     "docs/host-readiness.md",
 ]
 
@@ -350,6 +351,20 @@ def validate_manifest(manifest: dict, findings: Findings) -> None:
     if mcp.get("source") and not (ROOT / mcp["source"]).is_file():
         findings.error(f"manifest.mcp.source '{mcp['source']}' does not exist")
 
+    workspace = manifest.get("agentWorkspace")
+    if not isinstance(workspace, dict):
+        findings.error("manifest: 'agentWorkspace' must be an object")
+    else:
+        source = workspace.get("source")
+        if not source or not (ROOT / source).is_dir():
+            findings.error(f"manifest.agentWorkspace.source '{source}' is not a directory")
+        target = workspace.get("target")
+        if not isinstance(target, str) or not (target.startswith("/") or target.startswith("~/")):
+            findings.error("manifest.agentWorkspace.target must be an absolute path")
+        provisioner = workspace.get("provisionedBy")
+        if not provisioner or not (ROOT / provisioner).is_file():
+            findings.error(f"manifest.agentWorkspace.provisionedBy '{provisioner}' is missing")
+
 
 def check_profile(manifest: dict, findings: Findings) -> None:
     directory = ROOT / "harness" / "profile" / manifest["profile"]
@@ -649,6 +664,20 @@ def build_inventory(manifest: dict) -> dict:
                 "deployed": target.is_symlink() or target.exists(),
             }
         )
+
+    workspace = manifest.get("agentWorkspace") or {}
+    workspace_target = expand(workspace.get("target", "/opt/agents"))
+    workspace_bin = workspace_target / "bin"
+    helpers = sorted(
+        path.name for path in workspace_bin.iterdir() if path.is_file()
+    ) if workspace_bin.is_dir() else []
+    provisioned = {}
+    state_path = workspace_target / "state" / "provision.json"
+    if state_path.is_file():
+        try:
+            provisioned = read_json(state_path)
+        except ValueError:
+            provisioned = {}
     if skills_root.is_dir():
         for child in sorted(skills_root.glob("*/SKILL.md")):
             rel = str(child.relative_to(ROOT))
@@ -708,6 +737,14 @@ def build_inventory(manifest: dict) -> dict:
             "userRoot": display(agents_home / "skills"),
         },
         "instructions": instructions,
+        "agentWorkspace": {
+            "source": workspace.get("source"),
+            "target": str(workspace_target),
+            "exists": workspace_target.is_dir(),
+            "helpers": helpers,
+            "provisionedAt": provisioned.get("provisionedAt"),
+            "sourceCommit": provisioned.get("sourceCommit"),
+        },
         "credentials": {
             "store": display(credentials),
             "refs": sorted(refs),

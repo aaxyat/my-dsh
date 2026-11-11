@@ -143,6 +143,8 @@ The loader watches roots (including symlinked directories) and picks up edits li
 
 Tool enablement and permissions therefore live in the profile patch (rows such as `tool-plugin-manager`, `permission-presets`) and in each session's permission mode. `harness/tools/README.md` maps the surfaces; `harness/mcp/servers.yaml` inventories MCP servers.
 
+Separately, the machine-level helper workspace described in `AGENTS.md` §7 is tracked in `agents/` and installed to `/opt/agents` by `tools/provision_agents.py`. It is not part of the DSH composition and is not deployed by `bin/dsh apply`.
+
 ## 7. MCP servers
 
 Each server is one plugin instance in the profile patch:

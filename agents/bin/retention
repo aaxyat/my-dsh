@@ -1,0 +1,99 @@
+#!/usr/bin/env python3
+"""Report or purge aged workspace data. Human-owned; agents never call --apply."""
+
+import argparse
+import json
+import os
+import shutil
+import sys
+import time
+from datetime import datetime, timezone
+from pathlib import Path
+
+WORKSPACE = Path("/opt/agents")
+TMP = WORKSPACE / "tmp"
+LOGS = WORKSPACE / "logs"
+TRASH = WORKSPACE / "data" / ".trash"
+AUDIT = LOGS / "retention-audit.log"
+
+
+def age_days(path):
+    return (time.time() - os.lstat(path).st_mtime) / 86400.0
+
+
+def candidates(root, days, immediate_only=False):
+    if not root.is_dir():
+        return []
+    found = []
+    entries = sorted(root.iterdir())
+    for entry in entries:
+        if entry.name in (".", ".."):
+            continue
+        if age_days(entry) > days:
+            found.append(entry)
+            if immediate_only:
+                continue
+    return found
+
+
+def audit(record):
+    LOGS.mkdir(parents=True, exist_ok=True)
+    line = json.dumps(record, ensure_ascii=False, sort_keys=True) + "\n"
+    fd = os.open(str(AUDIT), os.O_APPEND | os.O_CREAT | os.O_WRONLY, 0o600)
+    try:
+        os.write(fd, line.encode("utf-8", "surrogateescape"))
+    finally:
+        os.close(fd)
+
+
+def main(argv=None):
+    parser = argparse.ArgumentParser(prog="retention", description=__doc__)
+    parser.add_argument("--apply", action="store_true", help="actually delete (default: report)")
+    parser.add_argument("--quote", default="", help="the owner's literal instruction (required with --apply)")
+    parser.add_argument("--tmp-days", type=float, default=7.0)
+    parser.add_argument("--keep-days", type=float, default=30.0)
+    args = parser.parse_args(argv)
+
+    if args.apply and not args.quote.strip():
+        parser.error("--apply requires --quote with the owner's words")
+    if not WORKSPACE.is_dir():
+        parser.error(f"{WORKSPACE} is missing; provision the workspace first")
+
+    groups = {
+        "tmp": candidates(TMP, args.tmp_days),
+        "logs": [p for p in candidates(LOGS, args.keep_days) if p.is_file()],
+        "trash": candidates(TRASH, args.keep_days),
+    }
+    total = sum(len(items) for items in groups.values())
+    for name, items in groups.items():
+        for item in items:
+            print(f"{'DELETE' if args.apply else 'would delete'} {name}: {item}")
+    print(f"\n{total} candidate(s); tmp > {args.tmp_days:g}d, logs/trash > {args.keep_days:g}d")
+
+    if not args.apply or total == 0:
+        if not args.apply:
+            print("dry run; re-run with --apply --quote \"<owner words>\"")
+        return 0
+
+    deleted = 0
+    for name, items in groups.items():
+        for item in items:
+            try:
+                if item.is_symlink() or not item.is_dir():
+                    os.unlink(item)
+                else:
+                    shutil.rmtree(item)
+                deleted += 1
+            except OSError as exc:
+                print(f"error: {item}: {exc}", file=sys.stderr)
+    audit({"at": datetime.now(timezone.utc).isoformat(), "action": "retention",
+           "quote": args.quote, "deleted": deleted, "uid": os.getuid()})
+    print(f"deleted {deleted} path(s)")
+    return 0
+
+
+if __name__ == "__main__":
+    try:
+        sys.exit(main())
+    except KeyboardInterrupt:
+        sys.exit(130)

@@ -1,0 +1,205 @@
+#!/usr/bin/env python3
+"""Soft-delete shim: scratch is removed, everything else moves to data/.trash."""
+
+import argparse
+import hashlib
+import json
+import os
+import secrets
+import shutil
+import subprocess
+import sys
+from datetime import datetime, timezone
+from pathlib import Path
+
+WORKSPACE = Path("/opt/agents")
+TRASH = WORKSPACE / "data" / ".trash"
+AUDIT = WORKSPACE / "logs" / "rm-audit.log"
+UID = os.getuid()
+SCRATCH_ROOTS = [WORKSPACE / "tmp", Path(f"/tmp/agents-{UID}")]
+PROTECTED = {
+    Path("/"), Path.home(), WORKSPACE, WORKSPACE / "bin", WORKSPACE / "data",
+    WORKSPACE / "state", WORKSPACE / "logs", WORKSPACE / "tmp", TRASH,
+}
+
+
+def is_under(path, root):
+    try:
+        Path(path).relative_to(root)
+        return True
+    except ValueError:
+        return False
+
+
+def is_ancestor(path, child):
+    try:
+        Path(child).relative_to(path)
+        return True
+    except ValueError:
+        return False
+
+
+def audit(record):
+    AUDIT.parent.mkdir(parents=True, exist_ok=True)
+    line = json.dumps(record, ensure_ascii=False, sort_keys=True) + "\n"
+    fd = os.open(str(AUDIT), os.O_APPEND | os.O_CREAT | os.O_WRONLY, 0o600)
+    try:
+        os.write(fd, line.encode("utf-8", "surrogateescape"))
+    finally:
+        os.close(fd)
+
+
+def fingerprint(path):
+    info = os.lstat(path)
+    return {"type": "link" if os.path.islink(path) else
+            "dir" if os.path.isdir(path) else "file",
+            "size": info.st_size}
+
+
+def immutable(path):
+    if sys.platform != "darwin":
+        return False
+    try:
+        result = subprocess.run(["stat", "-f", "%f", path],
+                                capture_output=True, text=True, check=False)
+        return result.returncode == 0 and bool(int(result.stdout.strip(), 0) & 0x2)
+    except (OSError, ValueError):
+        return False
+
+
+def guard(path):
+    if not os.path.isabs(path):
+        return "path must be absolute"
+    if os.path.normpath(path) != path:
+        return "path must be normalized (no '.', '..' or duplicate separators)"
+    resolved = Path(path)
+    if resolved in PROTECTED:
+        return "path is protected"
+    if is_under(resolved, WORKSPACE / "bin"):
+        return "bin/ is locked; unlock it deliberately before touching helpers"
+    for root in (WORKSPACE, Path.home()):
+        if is_ancestor(resolved, root):
+            return "refusing to delete an ancestor of a protected root"
+    if os.path.lexists(path) and immutable(path):
+        return "target is chflags-locked; unlock it deliberately first"
+    return None
+
+
+def main(argv=None):
+    parser = argparse.ArgumentParser(prog="rm", description=__doc__)
+    parser.add_argument("--quote", default="", help="the user's literal instruction (recorded)")
+    parser.add_argument("--manifest", help="manifest whose sha256 is recorded in the audit line")
+    parser.add_argument("--require-quote", action="store_true", help="fail without --quote")
+    parser.add_argument("--dry-run", action="store_true", help="show the plan only")
+    parser.add_argument("paths", nargs="+")
+    args = parser.parse_args(argv)
+
+    if args.require_quote and not args.quote.strip():
+        parser.error("--quote is required for this deletion")
+    if not WORKSPACE.is_dir():
+        parser.error(f"{WORKSPACE} is missing; provision the workspace first")
+
+    targets = [os.path.abspath(os.path.expanduser(raw)) for raw in args.paths]
+    for target in targets:
+        problem = guard(target)
+        if problem:
+            parser.error(f"{target}: {problem}")
+    for index, first in enumerate(targets):
+        for second in targets[index + 1:]:
+            if is_ancestor(first, second) or is_ancestor(second, first):
+                parser.error(f"nested targets in one invocation: {first} and {second}")
+    missing = [t for t in targets if not os.path.lexists(t)]
+    if missing:
+        parser.error("path(s) do not exist: " + ", ".join(missing))
+
+    manifest_sha = ""
+    if args.manifest:
+        manifest_path = os.path.abspath(os.path.expanduser(args.manifest))
+        if not os.path.isfile(manifest_path):
+            parser.error(f"manifest not found: {manifest_path}")
+        with open(manifest_path, "rb") as handle:
+            manifest_sha = hashlib.sha256(handle.read()).hexdigest()
+
+    scratch = [t for t in targets if any(is_under(t, root) for root in SCRATCH_ROOTS)]
+    persistent = [t for t in targets if t not in scratch]
+
+    if not args.quote.strip():
+        print("warning: no --quote recorded; the audit line will show an empty instruction", file=sys.stderr)
+
+    if args.dry_run:
+        for target in scratch:
+            print(f"would purge scratch {target}")
+        for target in persistent:
+            print(f"would move {target} -> {TRASH}")
+        return 0
+
+    for target in scratch:
+        if os.path.islink(target) or not os.path.isdir(target):
+            os.unlink(target)
+        else:
+            shutil.rmtree(target)
+        audit({"at": datetime.now(timezone.utc).isoformat(), "action": "purge-scratch",
+               "path": target, "quote": args.quote, "uid": UID, "manifest": manifest_sha})
+        print(f"purged scratch {target}")
+
+    if not persistent:
+        return 0
+
+    TRASH.mkdir(parents=True, exist_ok=True)
+    os.chmod(TRASH, 0o700)
+    now = datetime.now(timezone.utc)
+    identifier = now.strftime("%Y%m%dT%H%M%SZ") + "-" + secrets.token_hex(3)
+    batch = TRASH / now.strftime("%Y-%m-%d") / identifier
+    batch.mkdir(parents=True, exist_ok=False)
+    os.chmod(batch, 0o700)
+
+    entries = []
+    for index, target in enumerate(persistent):
+        name = os.path.basename(target.rstrip("/")) or "target"
+        stored = batch / f"{index:03d}-{name}"
+        entries.append({"original": target, "stored": str(stored),
+                        "type": fingerprint(target)["type"]})
+    meta = {"id": identifier, "created": now.isoformat(), "quote": args.quote,
+            "uid": UID, "cwd": os.getcwd(), "manifest": manifest_sha,
+            "entries": entries, "status": "moving"}
+    meta_path = batch / "meta.json"
+    with open(meta_path, "w", encoding="utf-8") as handle:
+        json.dump(meta, handle, indent=2)
+        handle.write("\n")
+    os.chmod(meta_path, 0o600)
+
+    moved = []
+    try:
+        for entry, target in zip(entries, persistent):
+            shutil.move(target, entry["stored"])
+            moved.append(entry)
+    except OSError as exc:
+        print(f"error: move failed: {exc}", file=sys.stderr)
+        for entry in reversed(moved):
+            try:
+                shutil.move(entry["stored"], entry["original"])
+            except OSError as rollback_exc:
+                print(f"rollback failed for {entry['original']}: {rollback_exc}", file=sys.stderr)
+        meta["status"] = "failed"
+        with open(meta_path, "w", encoding="utf-8") as handle:
+            json.dump(meta, handle, indent=2)
+        return 1
+
+    meta["status"] = "trashed"
+    with open(meta_path, "w", encoding="utf-8") as handle:
+        json.dump(meta, handle, indent=2)
+    audit({"at": now.isoformat(), "action": "soft-delete", "id": identifier,
+           "count": len(entries), "quote": args.quote, "uid": UID,
+           "manifest": manifest_sha, "entries": [e["original"] for e in entries]})
+    for entry in entries:
+        print(f"moved {entry['original']} -> {entry['stored']}")
+    print(f"trash id: {identifier}")
+    print(f"undo: /opt/agents/bin/undo-rm {identifier}")
+    return 0
+
+
+if __name__ == "__main__":
+    try:
+        sys.exit(main())
+    except KeyboardInterrupt:
+        sys.exit(130)

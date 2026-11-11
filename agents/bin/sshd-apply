@@ -1,0 +1,40 @@
+#!/bin/sh
+# sshd change ritual. The mutating path is deliberately disabled until the three
+# rehearsal cases in AGENTS.md §4 pass (good config, broken config, lockout).
+set -u
+
+plan() {
+  cat <<'PLAN'
+sshd-apply — manual ritual (mutating path disabled until rehearsed)
+
+1. State the lockout scenario and the exact rollback file.
+2. Back up:     ssh HOST 'sudo cp -a /etc/ssh/sshd_config /etc/ssh/sshd_config.bak.<ts>'
+3. Stage:       scp NEW_CONFIG HOST:/tmp/sshd_config.new.<ts>
+4. Validate:    ssh HOST 'sudo sshd -t -f /tmp/sshd_config.new.<ts>'
+5. Arm revert:  ssh HOST 'sudo systemd-run --on-active=5m --unit=revert-sshd-<ts> \
+                  sudo cp -a /etc/ssh/sshd_config.bak.<ts> /etc/ssh/sshd_config && sudo systemctl reload ssh'
+6. Prove timer: ssh HOST 'systemctl list-timers | grep revert-sshd'
+7. Apply:       ssh HOST 'sudo cp /tmp/sshd_config.new.<ts> /etc/ssh/sshd_config && sudo systemctl reload ssh'
+8. Check socket: ssh HOST 'systemctl is-active ssh.socket'
+9. Verify NEW:  ssh-verify HOST                (must be a brand-new connection)
+10. Disarm:     ssh HOST 'sudo systemctl stop revert-sshd-<ts>.timer'
+11. Re-probe listeners and report counts.
+
+If step 9 fails, do not close the old session; let the timer fire or restore by hand.
+PLAN
+}
+
+case "${1:-}" in
+  ""|--plan|-h|--help)
+    plan
+    exit 0
+    ;;
+esac
+
+cat >&2 <<'REFUSE'
+sshd-apply: REFUSED — the mutating path has not passed the three rehearsal cases.
+Run the ritual by hand using the plan below. This guard is intentional.
+REFUSE
+echo >&2
+plan >&2
+exit 3

@@ -10,7 +10,7 @@ It answers: where the setup stands, what was decided, what is still open, and wh
 
 | Field | Value |
 |---|---|
-| Status | Bootstrapped, validated, published |
+| Status | Bootstrapped, provisioned, validated, published |
 | As of | 2026-11-11 |
 | Repository | https://github.com/aaxyat/my-dsh (public) |
 | DSH desktop | `0.2.2-rc.1` (darwin / arm64) |
@@ -23,6 +23,7 @@ It answers: where the setup stands, what was decided, what is still open, and wh
 | MCP servers | 0 |
 | Managed artifacts | 6 + 1 personal plugin |
 | Global rules | `AGENTS.md` + `RULES.md` deployed as symlinks |
+| Agent workspace | `/opt/agents` provisioned from `agents/` · 10 helpers · `bin/` locked |
 
 Verified on the originating machine:
 
@@ -31,6 +32,8 @@ Verified on the originating machine:
 - `./bin/dsh apply --dry-run` — no unexpected conflicts.
 - Profile files copied byte-for-byte from `~/.dsh/profiles/desktop/`.
 - `@local/pinned-workspaces` relinked from this repository; `pnpm add link:` succeeded and `capture` recorded the new dependency path.
+- `/opt/agents` provisioned and `preflight` exits 0 with 7 warnings (SSH config, `gitleaks`, hooks, retention, PATH, alias).
+- Helper smoke tests: manifest, soft delete + undo, git snapshot (temp repo, index untouched), retention dry/apply, sshd-apply refusal, protected-path refusal.
 
 ## What exists
 
@@ -63,6 +66,7 @@ machine/inventory.json    generated snapshot of the captured machine
 | 5 | `apply` refuses to overwrite differing live files without `--force` | Prevents silently destroying changes made in the app. |
 | 6 | Third-party plugins are recorded, not vendored | Keeps the repo small and respects upstream licenses/updates. |
 | 7 | Global instructions deploy to `~/.agents/AGENTS.md`, not `~/.dsh/AGENTS.md` | Tool-agnostic location; DSH deduplicates identical content if both exist. |
+| 8 | `/opt/agents` is provisioned from the tracked `agents/` tree | Helpers become reviewable, versioned and reproducible; the installer owns layout, hashes and the `chflags` lock. |
 
 Full rationale: [`docs/decisions/`](docs/decisions/).
 
@@ -70,7 +74,7 @@ Full rationale: [`docs/decisions/`](docs/decisions/).
 
 1. **License.** The public repo currently grants no reuse rights. Decide: keep unlicensed, add MIT, or make the repo private. Recorded as an open question because it is a user preference.
 2. **Legacy `pinned-workspaces` directory.** The live profile now links the repo copy, but the original directory at `~/Documents/Projects/Deepseek/pinned-workspaces` still exists as an identical duplicate. Decide when to archive or delete it. Do not edit that copy going forward; this repository is canonical.
-3. **Global rules content and adaptations.** The user-supplied manual is installed as `AGENTS.md`; `RULES.md` is the compact rules 1–7 derived from it. Three adaptations were made: `xd://lsp` is described as host-dependent, `preflight` absence degrades to a notice, and the companion path is explicit. Review those, plus the `/opt/agents` provisioning gap in [docs/host-readiness.md](docs/host-readiness.md).
+3. **Global rules content and adaptations.** The user-supplied manual is installed as `AGENTS.md`; `RULES.md` is the compact rules 1–7 derived from it. Three adaptations were made: `xd://lsp` is described as host-dependent, `preflight` absence degrades to a notice, and the companion path is explicit. Review those. The workspace itself is provisioned; remaining host gaps are listed in [docs/host-readiness.md](docs/host-readiness.md).
 4. **Provider posture.** The profile's `llm-pi-ai` provider (`opencode-go`) fronts many third-party models through one endpoint and one key (`OPENCODE_GO_API_KEY`). This is captured as configuration only. If the endpoint or key handling changes, update the profile here — never commit the key.
 5. **Capture cadence.** Today capture is manual. If drift becomes common, revisit a launchd/Git-hook automation (see ADR-0002 consequences).
 
@@ -79,16 +83,18 @@ Full rationale: [`docs/decisions/`](docs/decisions/).
 Priority order:
 
 1. **Restart DSH**, open a new session, and confirm the new global rules load (`AGENTS.md`), with `RULES.md` present at `~/.agents/`.
-2. Provision `/opt/agents` (layout, README, `preflight`/`manifest`/`rm`/`git-snapshot`/SSH helpers) or explicitly accept the manual fallbacks in [docs/host-readiness.md](docs/host-readiness.md).
-3. Add `~/.ssh/config` host blocks plus `ControlPersist` policy before using the remote-host rules; install `gitleaks` for the pre-commit scan.
-4. Resolve the license question (README + `LICENSE`).
-5. Add the first real personal skill under `harness/skills/<name>/` using [`docs/templates/SKILL.md`](docs/templates/SKILL.md), then `./bin/dsh link`.
-6. When an MCP server is adopted, add its row to the profile patch and `harness/mcp/servers.yaml` in the same commit.
-7. Re-run `./bin/dsh capture` after any change made in the DSH app, and commit.
+2. Close the remaining host gaps in [docs/host-readiness.md](docs/host-readiness.md): `~/.ssh/config` hosts + `SSH_AUTH_SOCK`, `gitleaks` + global hook chain, retention LaunchAgent, `PATH`, optional `/agents` alias.
+3. Resolve the license question (README + `LICENSE`).
+4. Add the first real personal skill under `harness/skills/<name>/` using [`docs/templates/SKILL.md`](docs/templates/SKILL.md), then `./bin/dsh link`.
+5. When an MCP server is adopted, add its row to the profile patch and `harness/mcp/servers.yaml` in the same commit.
+6. Re-run `./bin/dsh capture` after any change made in the DSH app, and commit.
+7. Update `agents/bin/*` in the repo, then `python3 tools/provision_agents.py --force`; never edit `/opt/agents/bin` in place.
 
 ## Known gaps
 
-- Global rules are deployed, but their `/opt/agents` helpers, SSH host config, `gitleaks`, retention job and locks are absent; the rules must run on manual fallbacks. See [docs/host-readiness.md](docs/host-readiness.md).
+- `/opt/agents` is provisioned and locked, but `PATH` is not wired, the `/agents` alias is absent (no passwordless sudo), and the retention LaunchAgent is not installed (human-owned). `preflight` reports 7 warnings.
+- Remote-host helpers exist but were not exercised against a host: there is no `~/.ssh/config`, `SSH_AUTH_SOCK` does not point at Bitwarden, and `gitleaks`/global hooks are missing. `sshd-apply` intentionally refuses to mutate.
+- Helper tests covered normal and guard paths, not large trees, cross-volume moves, or concurrent runs.
 - `RULES.md` is not auto-loaded by DSH; it is a companion for composing subagent prompts and must be pasted or read explicitly.
 - No personal skills or MCP servers exist yet, so those paths are exercised by docs/checks, not real content.
 - The personal plugin's `link:` dependency is an absolute path; it is machine-specific even though it now points inside this repo. On a target machine, `apply --with-plugins` rewrites it.
@@ -107,6 +113,7 @@ Add one row per working session, newest first. Keep it terse; details belong in 
 | 2026-11-11 | Bootstrap | Repo initialized; DSH config inventoried; profile, personal plugin and instructions captured; CLI (`capture/apply/link/check/doctor`), docs, ADRs, manifest, CI added; validated and pushed to GitHub. |
 | 2026-11-11 | Plugin tracking | Documented `@local/pinned-workspaces`; repointed the live `desktop` profile link from the pre-repo directory to `harness/plugins/pinned-workspaces/`; captured the new dependency and inventory. |
 | 2026-11-11 | Global rules | Installed the user-supplied operating manual as the auto-loaded `AGENTS.md`; added the derived compact `RULES.md`; deployed both to `~/.agents/`; audited rule assumptions in `docs/host-readiness.md`. |
+| 2026-11-11 | Agent workspace | Added the tracked `agents/` tree and idempotent `tools/provision_agents.py`; provisioned `/opt/agents` with 10 helpers, `0700` layout and a locked `bin/`; smoke-tested the helpers and recorded the results in `docs/host-readiness.md`. |
 
 ---
 

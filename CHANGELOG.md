@@ -13,6 +13,13 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); version
 - `docs/host-readiness.md`: audit of the rules' `/opt/agents`, helper, SSH and hook assumptions against this machine.
 - `machine/inventory.json` now records every instruction artifact, not just the first.
 
+### Added (agent workspace)
+
+- `agents/`: tracked source for `/opt/agents` — layout README plus `preflight`, `manifest`, `rm`, `gate-rm`, `undo-rm`, `git-snapshot`, `ssh-probe`, `ssh-verify`, `sshd-apply`, `retention`.
+- `tools/provision_agents.py`: idempotent installer with `--dry-run`, `--force`, `--no-lock`; records `state/provision.json` and locks `bin/` with `chflags`.
+- `manifest.agentWorkspace` and inventory reporting for the installed workspace.
+- `docs/host-readiness.md`: refreshed with provisioned status, smoke-test evidence and remaining SSH/hook/retention gaps.
+
 ### Fixed
 
 - `apply` warns when a copied profile references a personal plugin at a path that does not exist on the target machine.

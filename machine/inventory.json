@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "generatedBy": "bin/dsh capture",
-  "capturedAt": "2026-11-11T15:30:52Z",
+  "capturedAt": "2026-11-11T15:47:36Z",
   "host": {
     "system": "Darwin",
     "release": "27.0.0",
@@ -79,6 +79,25 @@
       "deployed": true
     }
   ],
+  "agentWorkspace": {
+    "source": "agents",
+    "target": "/opt/agents",
+    "exists": true,
+    "helpers": [
+      "gate-rm",
+      "git-snapshot",
+      "manifest",
+      "preflight",
+      "retention",
+      "rm",
+      "ssh-probe",
+      "ssh-verify",
+      "sshd-apply",
+      "undo-rm"
+    ],
+    "provisionedAt": "2026-11-11T15:46:15Z",
+    "sourceCommit": "86e02cbea753e095133fb46334b41498442369c7"
+  },
   "credentials": {
     "store": "~/.dsh/.credentials.yaml",
     "refs": [

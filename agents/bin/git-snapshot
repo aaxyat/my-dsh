@@ -1,0 +1,127 @@
+#!/usr/bin/env python3
+"""Snapshot tracked and untracked work into refs/backup without touching the index."""
+
+import argparse
+import os
+import re
+import subprocess
+import sys
+import tarfile
+from datetime import datetime, timezone
+from pathlib import Path
+
+WORKSPACE = Path("/opt/agents")
+TMP = WORKSPACE / "tmp"
+BACKUPS = WORKSPACE / "data" / "backups"
+
+
+def git(repo, args, env=None):
+    return subprocess.run(["git", "-C", str(repo)] + args,
+                          capture_output=True, text=True, env=env)
+
+
+def config(repo, key, fallback):
+    result = git(repo, ["config", "--get", key])
+    value = result.stdout.strip()
+    return value or fallback
+
+
+def main(argv=None):
+    parser = argparse.ArgumentParser(prog="git-snapshot", description=__doc__)
+    parser.add_argument("name", help="snapshot name (letters, digits, dot, dash, underscore)")
+    parser.add_argument("--repo", default=".", help="path inside the repository")
+    parser.add_argument("--tar-ignored", action="store_true", help="archive ignored files too")
+    args = parser.parse_args(argv)
+
+    if not re.fullmatch(r"[A-Za-z0-9._-]+", args.name):
+        parser.error("name may contain only letters, digits, dot, dash and underscore")
+    if not WORKSPACE.is_dir() or not TMP.is_dir():
+        parser.error(f"{WORKSPACE} is not provisioned")
+
+    root_result = git(args.repo, ["rev-parse", "--show-toplevel"])
+    if root_result.returncode != 0:
+        parser.error(f"not a git repository: {args.repo}")
+    repo = Path(root_result.stdout.strip())
+    date = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")
+    ref = f"refs/backup/{args.name}-{date}"
+
+    index_file = TMP / f"git-snapshot-{os.getpid()}.index"
+    env = os.environ.copy()
+    env["GIT_INDEX_FILE"] = str(index_file)
+    try:
+        if git(repo, ["rev-parse", "--verify", "HEAD"]).returncode == 0:
+            read = git(repo, ["read-tree", "HEAD"], env=env)
+        else:
+            read = git(repo, ["read-tree", "--empty"], env=env)
+        if read.returncode != 0:
+            print(f"error: read-tree failed: {read.stderr.strip()}", file=sys.stderr)
+            return 1
+
+        add = git(repo, ["add", "-A"], env=env)
+        if add.returncode != 0:
+            print(f"error: git add failed: {add.stderr.strip()}", file=sys.stderr)
+            return 1
+        tree = git(repo, ["write-tree"], env=env)
+        if tree.returncode != 0:
+            print(f"error: write-tree failed: {tree.stderr.strip()}", file=sys.stderr)
+            return 1
+        tree_id = tree.stdout.strip()
+
+        parent = git(repo, ["rev-parse", "--verify", "HEAD"])
+        parents = ["-p", parent.stdout.strip()] if parent.returncode == 0 else []
+
+        env.setdefault("GIT_AUTHOR_NAME", config(repo, "user.name", "agent-snapshot"))
+        env.setdefault("GIT_AUTHOR_EMAIL", config(repo, "user.email", "agent-snapshot@localhost"))
+        env.setdefault("GIT_COMMITTER_NAME", env["GIT_AUTHOR_NAME"])
+        env.setdefault("GIT_COMMITTER_EMAIL", env["GIT_AUTHOR_EMAIL"])
+
+        commit = git(repo, ["commit-tree", tree_id] + parents +
+                     ["-m", f"snapshot {args.name} {date}"], env=env)
+        if commit.returncode != 0:
+            print(f"error: commit-tree failed: {commit.stderr.strip()}", file=sys.stderr)
+            return 1
+        commit_id = commit.stdout.strip()
+
+        update = git(repo, ["update-ref", ref, commit_id])
+        if update.returncode != 0:
+            print(f"error: update-ref failed: {update.stderr.strip()}", file=sys.stderr)
+            return 1
+
+        listing = git(repo, ["ls-files", "-z"], env=env)
+        count = len([item for item in listing.stdout.split("\0") if item])
+    finally:
+        try:
+            os.unlink(index_file)
+        except OSError:
+            pass
+
+    print(f"repo:   {repo}")
+    print(f"ref:    {ref}")
+    print(f"commit: {commit_id}")
+    print(f"files:  {count}")
+    print("index/worktree: untouched")
+
+    if args.tar_ignored:
+        BACKUPS.mkdir(parents=True, exist_ok=True)
+        os.chmod(BACKUPS, 0o700)
+        archive = BACKUPS / f"{args.name}-{date}-ignored.tar.gz"
+        ignored = git(repo, ["ls-files", "--others", "--ignored", "--exclude-standard", "-z"])
+        names = [item for item in ignored.stdout.split("\0") if item]
+        with tarfile.open(archive, "w:gz") as bundle:
+            for name in names:
+                path = repo / name
+                if path.exists() or path.is_symlink():
+                    try:
+                        bundle.add(path, arcname=name, recursive=True)
+                    except OSError as exc:
+                        print(f"warning: skipped {name}: {exc}", file=sys.stderr)
+        os.chmod(archive, 0o600)
+        print(f"ignored archive: {archive} ({len(names)} path(s))")
+    return 0
+
+
+if __name__ == "__main__":
+    try:
+        sys.exit(main())
+    except KeyboardInterrupt:
+        sys.exit(130)

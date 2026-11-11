@@ -1,0 +1,180 @@
+#!/usr/bin/env python3
+"""Structural checks for the /opt/agents workspace. Exit 1 on FAIL."""
+
+import os
+import re
+import shutil
+import stat
+import subprocess
+import sys
+from pathlib import Path
+
+WORKSPACE = Path("/opt/agents")
+BIN = WORKSPACE / "bin"
+AGENTS_HOME = Path.home() / ".agents"
+HELPERS = [
+    "preflight", "manifest", "rm", "gate-rm", "undo-rm", "git-snapshot",
+    "ssh-probe", "ssh-verify", "sshd-apply", "retention",
+]
+
+fails = []
+warns = []
+
+
+def ok(message):
+    print(f"  OK    {message}")
+
+
+def warn(message):
+    warns.append(message)
+    print(f"  WARN  {message}")
+
+
+def fail(message):
+    fails.append(message)
+    print(f"  FAIL  {message}")
+
+
+def immutable(path):
+    try:
+        result = subprocess.run(["stat", "-f", "%f", str(path)],
+                                capture_output=True, text=True, check=False)
+        if result.returncode != 0:
+            return None
+        return bool(int(result.stdout.strip(), 0) & 0x2)
+    except (OSError, ValueError):
+        return None
+
+
+def mode(path):
+    try:
+        return stat.S_IMODE(os.stat(path).st_mode)
+    except OSError:
+        return None
+
+
+print("agent preflight")
+print(f"  workspace: {WORKSPACE}")
+
+print("\nlayout")
+required = [WORKSPACE, BIN, WORKSPACE / "data", WORKSPACE / "data" / ".trash",
+            WORKSPACE / "state", WORKSPACE / "state" / "locks",
+            WORKSPACE / "logs", WORKSPACE / "tmp"]
+for path in required:
+    if not path.is_dir():
+        fail(f"missing directory: {path}")
+    elif mode(path) != 0o700:
+        fail(f"{path} is {oct(mode(path))}, expected 0700")
+if not fails:
+    ok("all directories present with 0700")
+
+print("\nhelpers")
+missing = [name for name in HELPERS if not (BIN / name).is_file()]
+not_executable = [name for name in HELPERS if (BIN / name).is_file() and not os.access(BIN / name, os.X_OK)]
+if missing:
+    fail("missing helper(s): " + ", ".join(missing))
+if not_executable:
+    fail("not executable: " + ", ".join(not_executable))
+if not missing and not not_executable:
+    ok(f"{len(HELPERS)} helpers present and executable")
+
+if immutable(BIN) is not True:
+    fail(f"{BIN} is not locked with chflags uchg")
+else:
+    unlocked = [name for name in HELPERS if (BIN / name).is_file() and immutable(BIN / name) is not True]
+    if unlocked:
+        fail("helper(s) not locked: " + ", ".join(unlocked))
+    else:
+        ok("bin/ and every helper are chflags-locked")
+
+path_entries = os.environ.get("PATH", "").split(os.pathsep)
+if str(BIN) in path_entries:
+    ok("bin/ is on PATH")
+else:
+    warn("bin/ is not on PATH; call helpers absolutely or add it in your shell profile")
+
+print("\nhost integration")
+alias = Path("/agents")
+if alias.is_symlink() and os.path.realpath(str(alias)) == os.path.realpath(str(WORKSPACE)):
+    ok("/agents alias points at the workspace")
+else:
+    warn("/agents alias is missing (needs root: sudo ln -s /opt/agents /agents)")
+
+python = shutil.which("python3")
+if python:
+    ok(f"python3: {python}")
+else:
+    fail("python3 not on PATH; helpers cannot run")
+
+config = Path.home() / ".ssh" / "config"
+if config.is_file():
+    text = config.read_text(encoding="utf-8", errors="replace")
+    hosts = set()
+    for line in text.splitlines():
+        match = re.match(r"(?i)^\s*Host\s+(.+)$", line)
+        if match:
+            hosts.update(match.group(1).split())
+    absent = [host for host in ("newton", "mediaserver") if host not in hosts]
+    if absent:
+        warn("ssh config is missing host alias(es): " + ", ".join(absent))
+    else:
+        ok("ssh config defines newton and mediaserver")
+    if "ControlPersist" in text:
+        ok("ssh config declares ControlPersist")
+    else:
+        warn("ssh config has no ControlPersist policy")
+else:
+    warn("~/.ssh/config is missing; remote-host rules cannot be exercised")
+
+expected_sock = str(Path.home() / ".bitwarden-ssh-agent.sock")
+if os.environ.get("SSH_AUTH_SOCK") == expected_sock:
+    ok("SSH_AUTH_SOCK points at the Bitwarden agent")
+else:
+    warn(f"SSH_AUTH_SOCK is {os.environ.get('SSH_AUTH_SOCK', '<unset>')}; expected {expected_sock}")
+
+if shutil.which("gitleaks"):
+    ok("gitleaks is installed")
+else:
+    warn("gitleaks is missing; the pre-commit secret scan cannot run")
+
+hooks = subprocess.run(["git", "config", "--global", "core.hooksPath"],
+                       capture_output=True, text=True, check=False).stdout.strip()
+if not hooks:
+    warn("global core.hooksPath is unset")
+elif not Path(os.path.expanduser(hooks)).is_dir():
+    fail(f"core.hooksPath points at a missing directory: {hooks}")
+else:
+    ok(f"global hooks path: {hooks}")
+    repo = subprocess.run(["git", "rev-parse", "--show-toplevel"],
+                          capture_output=True, text=True, check=False).stdout.strip()
+    if repo:
+        local = Path(repo) / ".git" / "hooks"
+        executable = [p for p in local.glob("*")
+                      if p.is_file() and os.access(p, os.X_OK) and not p.name.endswith(".sample")] if local.is_dir() else []
+        if executable:
+            ok(f"current repo has local hook(s): {', '.join(p.name for p in executable)}")
+        else:
+            warn("current repo has no executable local hooks to chain")
+
+plist = Path.home() / "Library" / "LaunchAgents" / "sh.omp.agents-retention.plist"
+if plist.is_file():
+    ok("retention LaunchAgent is installed")
+else:
+    warn("retention LaunchAgent is not installed (human-owned)")
+
+agent_md = sorted((Path.home() / ".omp" / "agent").glob("*.md")) if (Path.home() / ".omp" / "agent").is_dir() else []
+if not agent_md:
+    ok("no ~/.omp/agent/*.md files require locking")
+else:
+    unlocked = [str(p) for p in agent_md if immutable(p) is not True]
+    if unlocked:
+        warn("unlocked agent markdown: " + ", ".join(unlocked))
+    else:
+        ok(f"{len(agent_md)} agent markdown file(s) locked")
+
+print("")
+if fails:
+    print(f"  {len(fails)} FAIL, {len(warns)} WARN")
+    sys.exit(1)
+print(f"  OK with {len(warns)} warning(s)" if warns else "  OK")
+sys.exit(0)

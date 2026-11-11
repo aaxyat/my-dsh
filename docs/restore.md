@@ -49,11 +49,21 @@ This:
 - creates `~/.agents/skills/<name>` symlinks for every personal skill;
 - refuses to overwrite a differing live file unless `--force`.
 
-Optional personal plugins (the manifest defaults to `enabled: false`):
+Optional personal plugins:
 
 ```sh
 ./bin/dsh apply --with-plugins     # pnpm add link:<repo>/harness/plugins/<name>
 ```
+
+Provision the machine-level agent workspace required by `AGENTS.md` §7:
+
+```sh
+python3 tools/provision_agents.py --dry-run
+python3 tools/provision_agents.py
+/opt/agents/bin/preflight
+```
+
+Then add `/opt/agents/bin` to `PATH` in your shell profile. The root-level `/agents` alias and the retention LaunchAgent are deliberate human steps, not automated by the provisioner.
 
 ## 4. Restore credentials
 

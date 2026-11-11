@@ -1,0 +1,29 @@
+#!/bin/sh
+# Read-only probe of a remote host. No multiplexing, no credential prompts.
+set -u
+
+if [ "$#" -ne 1 ]; then
+  echo "usage: ssh-probe HOST" >&2
+  exit 2
+fi
+host=$1
+
+ssh -o BatchMode=yes -o ConnectTimeout=5 -o LogLevel=ERROR \
+    -o ControlMaster=no -o ControlPath=none "$host" 'sh -s' <<'REMOTE'
+echo "## host"
+hostnamectl 2>/dev/null | head -5 || uname -a
+echo "## addresses"
+ip -br addr 2>/dev/null || ifconfig 2>/dev/null | head -40
+echo "## listeners"
+ss -ltn 2>/dev/null || netstat -ltn 2>/dev/null
+echo "## sshd effective config"
+sudo -n sshd -T 2>&1 | head -60 || echo "sshd -T unavailable (sudo -n required)"
+echo "## ssh service"
+systemctl status ssh --no-pager -l 2>&1 | head -15 || echo "systemctl unavailable"
+echo "## ssh socket"
+systemctl is-active ssh.socket 2>&1 || true
+echo "## uptime"
+uptime
+REMOTE
+status=$?
+exit "$status"

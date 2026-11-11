@@ -87,5 +87,11 @@
     "~/.dsh/profiles/desktop/cordis.yml",
     "~/.dsh/profiles/desktop/node_modules/",
     "~/.dsh/profiles/desktop/pnpm-lock.yaml"
-  ]
+  ],
+  "agentWorkspace": {
+    "source": "agents",
+    "target": "/opt/agents",
+    "provisionedBy": "tools/provision_agents.py",
+    "notes": "Machine-level helper workspace required by AGENTS.md section 7. Provision explicitly with tools/provision_agents.py; it is not deployed by bin/dsh apply."
+  }
 }

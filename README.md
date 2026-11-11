@@ -55,6 +55,7 @@ If you edit the repo first, run `./bin/dsh apply` to deploy, then `./bin/dsh doc
 | `./bin/dsh apply` | Deploy the repo to this machine (backs up replaced files; refuses silent overwrites). |
 | `./bin/dsh link` | Create only the symlinks (instructions + skills). Use after editing a skill. |
 | `./bin/dsh apply --with-plugins` | Also install personal plugins declared `enabled: true` in the manifest. Requires a DSH restart. |
+| `python3 tools/provision_agents.py` | Create/update `/opt/agents` (layout, helpers, lock). Idempotent; `--dry-run` first. |
 
 `make check`, `make capture`, `make apply`, `make link`, `make doctor` are equivalent.
 
@@ -67,6 +68,8 @@ README.md                  # this file
 CHANGELOG.md               # human-readable history
 bin/dsh                    # the only entry point you need
 tools/dshctl.py            # implementation of capture/apply/link/check/doctor
+tools/provision_agents.py  # installs agents/ into /opt/agents
+agents/                    # durable agent workspace source (helpers, layout, README)
 docs/                      # architecture, workflow, restore, secrets, ADRs, templates
 harness/
   manifest.json            # declared artifacts (source -> target, mode)
@@ -92,13 +95,14 @@ machine/inventory.json     # generated snapshot of the machine that produced thi
 | Third-party plugins | recorded in `harness/plugins/registry.yaml` | reinstalled from registry |
 | MCP servers | `harness/mcp/servers.yaml` + profile patch rows | part of the profile patch |
 | Machine/Dsh versions | `machine/inventory.json` | generated snapshot |
+| Agent workspace (`/opt/agents`) | `agents/` | provisioned by `tools/provision_agents.py` |
 
 Not managed: DSH application binaries, sessions, runtime toolchains, credentials, caches. See [harness/manifest.json](harness/manifest.json) `excluded`.
 
 ## Status
 
 Bootstrapped **2026-11-11** against DSH desktop **0.2.2-rc.1** on macOS (arm64), profile `desktop`.
-The global agent rules (`AGENTS.md` + `RULES.md`) are deployed from this repo and load in new sessions. One personal plugin (`@local/pinned-workspaces`) is installed from `harness/plugins/`. The machine's `/opt/agents` helper infrastructure is **not** provisioned yet — see [docs/host-readiness.md](docs/host-readiness.md) for the gap analysis before relying on those rules' helpers.
+The global agent rules (`AGENTS.md` + `RULES.md`) are deployed from this repo and load in new sessions. One personal plugin (`@local/pinned-workspaces`) is installed from `harness/plugins/`. `/opt/agents` is provisioned with 10 helpers and a locked `bin/`; `preflight` exits 0 with warnings for the still-missing SSH config, `gitleaks`, hook chain and retention job — see [docs/host-readiness.md](docs/host-readiness.md).
 
 ## Documentation
 
