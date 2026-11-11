@@ -14,7 +14,7 @@ Its purpose is provenance and drift detection: given a report from another machi
 | Profile | `desktop` |
 | Runtime | node `24.21.0` · pnpm `11.28.5` · python `3.12.14` |
 | Bundles | `dsh-base`, `dsh-web-app`, `@local/pinned-workspaces` |
-| Profile dependencies | 1 (`@local/pinned-workspaces`, `link:` to a pre-repo path) |
+| Profile dependencies | 1 (`@local/pinned-workspaces`, linked from `harness/plugins/`) |
 | Personal skills | 0 |
 | Bundled skills | 12 |
 | User-global instructions | present in repo, **not deployed** at capture time |
@@ -54,7 +54,7 @@ This is why CI can warn (not fail) when a profile edit has not been captured yet
 
 - Only the **names** of credential references are recorded.
 - The network hostname and user name are deliberately omitted; the Apple model identifier is enough to explain environment-specific behaviour.
-- `profile.dependencies` may contain absolute `link:` paths for personal plugins. This is a known portability wrinkle documented in [HANDOFF](../HANDOFF.md#known-gaps); on another machine, `./bin/dsh apply --with-plugins` rewrites them.
+- `profile.dependencies` contains absolute `link:` paths for personal plugins because pnpm requires an absolute target. On another machine, `./bin/dsh apply --with-plugins` rewrites them to that machine's repository path. This is recorded as a known portability wrinkle in [HANDOFF](../HANDOFF.md#known-gaps).
 
 ## Refreshing
 

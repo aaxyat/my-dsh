@@ -2,7 +2,7 @@
   "name": "dsh-profile-desktop",
   "private": true,
   "dependencies": {
-    "@local/pinned-workspaces": "link:/Users/aaxyat/Documents/Projects/Deepseek/pinned-workspaces"
+    "@local/pinned-workspaces": "link:/Users/aaxyat/Documents/Projects/my-dsh/harness/plugins/pinned-workspaces"
   },
   "dsh": {
     "profile": {

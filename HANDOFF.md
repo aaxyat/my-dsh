@@ -18,7 +18,7 @@ It answers: where the setup stands, what was decided, what is still open, and wh
 | DSH home | `~/.dsh` |
 | Shared agents home | `~/.agents` (created by `bin/dsh link`) |
 | Personal skills | 0 (scaffolding ready) |
-| Personal plugins | 1 installed (`@local/pinned-workspaces`, linked from a pre-repo path) |
+| Personal plugins | 1 installed (`@local/pinned-workspaces`, linked from `harness/plugins/`) |
 | Third-party plugins | 0 |
 | MCP servers | 0 |
 | Managed artifacts | 5 + 1 personal plugin |
@@ -29,6 +29,7 @@ Verified on the originating machine:
 - `./bin/dsh doctor` — environment and symlink health.
 - `./bin/dsh apply --dry-run` — no unexpected conflicts.
 - Profile files copied byte-for-byte from `~/.dsh/profiles/desktop/`.
+- `@local/pinned-workspaces` relinked from this repository; `pnpm add link:` succeeded and `capture` recorded the new dependency path.
 
 ## What exists
 
@@ -67,7 +68,7 @@ Full rationale: [`docs/decisions/`](docs/decisions/).
 ## Open questions
 
 1. **License.** The public repo currently grants no reuse rights. Decide: keep unlicensed, add MIT, or make the repo private. Recorded as an open question because it is a user preference.
-2. **`@local/pinned-workspaces` link target.** The plugin **is installed**, but its live dependency points at the pre-repo path `~/Documents/Projects/Deepseek/pinned-workspaces`, while the canonical copy is `harness/plugins/pinned-workspaces/`. Decide whether to repoint it (`./bin/dsh apply --with-plugins` + restart) or keep the old directory as the working copy. Recommended: repoint, so the repo is genuinely the source of truth. Also decide whether to archive/remove the old directory afterwards.
+2. **Legacy `pinned-workspaces` directory.** The live profile now links the repo copy, but the original directory at `~/Documents/Projects/Deepseek/pinned-workspaces` still exists as an identical duplicate. Decide when to archive or delete it. Do not edit that copy going forward; this repository is canonical.
 3. **Global instructions content.** `harness/instructions/AGENTS.md` is a deliberately conservative first draft. It should be reviewed and personalized before it is linked into `~/.agents/AGENTS.md` for daily use.
 4. **Provider posture.** The profile's `llm-pi-ai` provider (`opencode-go`) fronts many third-party models through one endpoint and one key (`OPENCODE_GO_API_KEY`). This is captured as configuration only. If the endpoint or key handling changes, update the profile here — never commit the key.
 5. **Capture cadence.** Today capture is manual. If drift becomes common, revisit a launchd/Git-hook automation (see ADR-0002 consequences).
@@ -76,8 +77,8 @@ Full rationale: [`docs/decisions/`](docs/decisions/).
 
 Priority order:
 
-1. Review `harness/instructions/AGENTS.md`, then run `./bin/dsh link` and confirm DSH loads it in a new session.
-2. Repoint the `@local/pinned-workspaces` link at the repo copy: `./bin/dsh apply --dry-run --with-plugins`, then `./bin/dsh apply --with-plugins`, restart, verify, `capture`, commit. Keep or archive the old directory at that point.
+1. **Restart DSH** and confirm `@local/pinned-workspaces` still loads from `harness/plugins/pinned-workspaces/` (the link was changed while the app was running).
+2. Review `harness/instructions/AGENTS.md`, then run `./bin/dsh link` and confirm DSH loads it in a new session.
 3. Resolve the license question (README + `LICENSE`).
 4. Add the first real personal skill under `harness/skills/<name>/` using [`docs/templates/SKILL.md`](docs/templates/SKILL.md), then `./bin/dsh link`.
 5. When an MCP server is adopted, add its row to the profile patch and `harness/mcp/servers.yaml` in the same commit.
@@ -87,8 +88,9 @@ Priority order:
 
 - No user-global instructions are currently *deployed*; the file exists in the repo only.
 - No personal skills or MCP servers exist yet, so those paths are exercised by docs/checks, not real content.
-- The only personal plugin is linked from a path outside this repo (see open question 2); its captured `link:` dependency is machine-specific until `apply --with-plugins` rewrites it on a target machine.
-- `apply --with-plugins` has not been executed against a live profile (deliberately — it mutates the machine). Its `pnpm add link:` and bundle-selection logic is implemented but unproven live; validate on the next machine or a disposable profile.
+- The personal plugin's `link:` dependency is an absolute path; it is machine-specific even though it now points inside this repo. On a target machine, `apply --with-plugins` rewrites it.
+- The legacy pre-repo plugin directory is an identical duplicate (open question 2). Only the repo copy should be edited.
+- `apply --with-plugins` could not drive pnpm inside this session's file sandbox (pnpm's store lives outside the workspace). The equivalent `pnpm add link:` command succeeded manually with full access; the script's wrapper logic is still unproven end-to-end on a fresh machine.
 - `check` warns rather than fails on machine-specific `link:` dependencies, uncaptured profile edits and missing inventory entries.
 - Inventory is a point-in-time snapshot; it is not a live monitor.
 - Windows/PowerShell is out of scope for now; scripts assume POSIX.
@@ -100,6 +102,7 @@ Add one row per working session, newest first. Keep it terse; details belong in 
 | Date | Session | Outcome |
 |---|---|---|
 | 2026-11-11 | Bootstrap | Repo initialized; DSH config inventoried; profile, personal plugin and instructions captured; CLI (`capture/apply/link/check/doctor`), docs, ADRs, manifest, CI added; validated and pushed to GitHub. |
+| 2026-11-11 | Plugin tracking | Documented `@local/pinned-workspaces`; repointed the live `desktop` profile link from the pre-repo directory to `harness/plugins/pinned-workspaces/`; captured the new dependency and inventory. |
 
 ---
 

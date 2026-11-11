@@ -62,7 +62,7 @@
       "install": "link",
       "enabled": true,
       "target": "~/.dsh/profiles/desktop/node_modules/@local/pinned-workspaces",
-      "notes": "Installed on the source machine via a link: dependency to its pre-repo location. The copy here is canonical going forward; `bin/dsh apply --with-plugins` creates link:<repo>/harness/plugins/pinned-workspaces in the target profile and selects the bundle. Restart DSH afterwards."
+      "notes": "Client-only Web bundle that pins workspaces to the top of the sidebar. Canonical source is this directory. Installed in the desktop profile as a link: dependency; `bin/dsh apply --with-plugins` links this directory on a target machine and selects the bundle. Restart DSH afterwards."
     }
   ],
   "mcp": {

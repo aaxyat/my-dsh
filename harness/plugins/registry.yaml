@@ -30,7 +30,7 @@ bundles:
 
   - name: "@local/pinned-workspaces"
     version: "1.0.0"
-    source: "link:/Users/aaxyat/Documents/Projects/Deepseek/pinned-workspaces"
+    source: "link:harness/plugins/pinned-workspaces"
     kind: personal
     reason: "Pin workspaces so they lead the sidebar and stay one click away. Canonical source is harness/plugins/pinned-workspaces/."
     added: "2026-11-11"

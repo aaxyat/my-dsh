@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "generatedBy": "bin/dsh capture",
-  "capturedAt": "2026-11-11T15:07:31Z",
+  "capturedAt": "2026-11-11T15:17:08Z",
   "host": {
     "system": "Darwin",
     "release": "27.0.0",
@@ -30,7 +30,7 @@
       "@local/pinned-workspaces"
     ],
     "dependencies": {
-      "@local/pinned-workspaces": "link:/Users/aaxyat/Documents/Projects/Deepseek/pinned-workspaces"
+      "@local/pinned-workspaces": "link:/Users/aaxyat/Documents/Projects/my-dsh/harness/plugins/pinned-workspaces"
     }
   },
   "plugins": {
@@ -86,8 +86,8 @@
       "bytes": 6519
     },
     "harness/profile/desktop/package.json": {
-      "sha256": "cb07aea24800e10b37d2359623cf95869ec28916bc93f03da0d9185b0cadb52c",
-      "bytes": 349
+      "sha256": "a4a5531cfc370bf00fcc2df8740ca2616a342779257045481fca81345da793a8",
+      "bytes": 363
     },
     "harness/profile/desktop/pnpm-workspace.yaml": {
       "sha256": "ae7c5b68e2f157528e62885804e69e88583897b775e03c86fcbe52feaf498aba",

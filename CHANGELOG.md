@@ -7,7 +7,8 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); version
 
 ### Added
 
-- Nothing yet.
+- `harness/plugins/pinned-workspaces/`: package documentation for the personal bundle (behaviour, files, install/disable, provenance).
+- The live `desktop` profile now links `@local/pinned-workspaces` from this repository instead of the legacy pre-repo directory.
 
 ### Fixed
 
