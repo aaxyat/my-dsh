@@ -864,6 +864,19 @@ class Deployer:
             self.conflicts += 1
             return
         self.changes += 1
+        if artifact.get("id") == "profile-package-json":
+            try:
+                dependencies = json.loads(new_bytes.decode("utf-8")).get("dependencies", {})
+            except ValueError:
+                dependencies = {}
+            for name, spec in dependencies.items():
+                if isinstance(spec, str) and spec.startswith("link:"):
+                    linked = Path(spec[len("link:"):])
+                    if not linked.exists():
+                        print(
+                            f"  WARN      {name} links to a missing path ({linked}); "
+                            "run apply --with-plugins to relink personal plugins"
+                        )
         if self.dry_run:
             print(f"  would create {display(target)}")
             return
