@@ -9,6 +9,9 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); version
 
 - `harness/plugins/pinned-workspaces/`: package documentation for the personal bundle (behaviour, files, install/disable, provenance).
 - The live `desktop` profile now links `@local/pinned-workspaces` from this repository instead of the legacy pre-repo directory.
+- Global operating rules: `harness/instructions/AGENTS.md` replaced with the user-supplied manual, plus `harness/instructions/RULES.md` (compact rules 1–7 for subagent prompts). Both deploy to `~/.agents/` as symlinks.
+- `docs/host-readiness.md`: audit of the rules' `/opt/agents`, helper, SSH and hook assumptions against this machine.
+- `machine/inventory.json` now records every instruction artifact, not just the first.
 
 ### Fixed
 

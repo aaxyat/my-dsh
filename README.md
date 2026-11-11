@@ -70,7 +70,8 @@ tools/dshctl.py            # implementation of capture/apply/link/check/doctor
 docs/                      # architecture, workflow, restore, secrets, ADRs, templates
 harness/
   manifest.json            # declared artifacts (source -> target, mode)
-  instructions/AGENTS.md   # user-global instructions -> ~/.agents/AGENTS.md
+  instructions/AGENTS.md   # global operating manual -> ~/.agents/AGENTS.md
+  instructions/RULES.md    # compact rules 1-7 for subagents -> ~/.agents/RULES.md
   profile/desktop/         # cordis.patch.yml, package.json, pnpm-workspace.yaml
   skills/                  # personal skills -> ~/.agents/skills/<name>
   plugins/                 # personal bundles + registry of third-party bundles
@@ -83,7 +84,7 @@ machine/inventory.json     # generated snapshot of the machine that produced thi
 
 | Surface | Where it lives here | Deploy mode |
 |---|---|---|
-| User-global agent instructions | `harness/instructions/AGENTS.md` | symlink to `~/.agents/AGENTS.md` |
+| User-global agent rules | `harness/instructions/AGENTS.md` (manual) and `RULES.md` (compact rules for subagents) | symlinks to `~/.agents/` |
 | Personal skills | `harness/skills/<name>/SKILL.md` | symlinked per skill into `~/.agents/skills/` |
 | Profile patch (models, UI, settings) | `harness/profile/desktop/cordis.patch.yml` | copy |
 | Profile bundle selection and deps | `harness/profile/desktop/package.json` | copy |
@@ -97,7 +98,7 @@ Not managed: DSH application binaries, sessions, runtime toolchains, credentials
 ## Status
 
 Bootstrapped **2026-11-11** against DSH desktop **0.2.2-rc.1** on macOS (arm64), profile `desktop`.
-The original machine had no user-global instructions, personal skills, MCP servers or third-party plugins installed. One personal plugin (`@local/pinned-workspaces`) is installed via a link to a pre-repo path; its canonical copy is in `harness/plugins/`. The captured configuration is the real starting point, not an aspirational template.
+The global agent rules (`AGENTS.md` + `RULES.md`) are deployed from this repo and load in new sessions. One personal plugin (`@local/pinned-workspaces`) is installed from `harness/plugins/`. The machine's `/opt/agents` helper infrastructure is **not** provisioned yet — see [docs/host-readiness.md](docs/host-readiness.md) for the gap analysis before relying on those rules' helpers.
 
 ## Documentation
 
@@ -107,6 +108,7 @@ The original machine had no user-global instructions, personal skills, MCP serve
 - [docs/restore.md](docs/restore.md) — rebuild on a new machine
 - [docs/secrets.md](docs/secrets.md) — credential handling and incident response
 - [docs/inventory.md](docs/inventory.md) — current captured state
+- [docs/host-readiness.md](docs/host-readiness.md) — rule assumptions vs. this machine
 - [docs/troubleshooting.md](docs/troubleshooting.md) — common failures
 - [docs/decisions/](docs/decisions/) — architecture decision records
 - [HANDOFF.md](HANDOFF.md) — what to do next

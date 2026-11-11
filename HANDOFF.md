@@ -21,7 +21,8 @@ It answers: where the setup stands, what was decided, what is still open, and wh
 | Personal plugins | 1 installed (`@local/pinned-workspaces`, linked from `harness/plugins/`) |
 | Third-party plugins | 0 |
 | MCP servers | 0 |
-| Managed artifacts | 5 + 1 personal plugin |
+| Managed artifacts | 6 + 1 personal plugin |
+| Global rules | `AGENTS.md` + `RULES.md` deployed as symlinks |
 
 Verified on the originating machine:
 
@@ -69,7 +70,7 @@ Full rationale: [`docs/decisions/`](docs/decisions/).
 
 1. **License.** The public repo currently grants no reuse rights. Decide: keep unlicensed, add MIT, or make the repo private. Recorded as an open question because it is a user preference.
 2. **Legacy `pinned-workspaces` directory.** The live profile now links the repo copy, but the original directory at `~/Documents/Projects/Deepseek/pinned-workspaces` still exists as an identical duplicate. Decide when to archive or delete it. Do not edit that copy going forward; this repository is canonical.
-3. **Global instructions content.** `harness/instructions/AGENTS.md` is a deliberately conservative first draft. It should be reviewed and personalized before it is linked into `~/.agents/AGENTS.md` for daily use.
+3. **Global rules content and adaptations.** The user-supplied manual is installed as `AGENTS.md`; `RULES.md` is the compact rules 1–7 derived from it. Three adaptations were made: `xd://lsp` is described as host-dependent, `preflight` absence degrades to a notice, and the companion path is explicit. Review those, plus the `/opt/agents` provisioning gap in [docs/host-readiness.md](docs/host-readiness.md).
 4. **Provider posture.** The profile's `llm-pi-ai` provider (`opencode-go`) fronts many third-party models through one endpoint and one key (`OPENCODE_GO_API_KEY`). This is captured as configuration only. If the endpoint or key handling changes, update the profile here — never commit the key.
 5. **Capture cadence.** Today capture is manual. If drift becomes common, revisit a launchd/Git-hook automation (see ADR-0002 consequences).
 
@@ -77,16 +78,18 @@ Full rationale: [`docs/decisions/`](docs/decisions/).
 
 Priority order:
 
-1. **Restart DSH** and confirm `@local/pinned-workspaces` still loads from `harness/plugins/pinned-workspaces/` (the link was changed while the app was running).
-2. Review `harness/instructions/AGENTS.md`, then run `./bin/dsh link` and confirm DSH loads it in a new session.
-3. Resolve the license question (README + `LICENSE`).
-4. Add the first real personal skill under `harness/skills/<name>/` using [`docs/templates/SKILL.md`](docs/templates/SKILL.md), then `./bin/dsh link`.
-5. When an MCP server is adopted, add its row to the profile patch and `harness/mcp/servers.yaml` in the same commit.
-6. Re-run `./bin/dsh capture` after any change made in the DSH app, and commit.
+1. **Restart DSH**, open a new session, and confirm the new global rules load (`AGENTS.md`), with `RULES.md` present at `~/.agents/`.
+2. Provision `/opt/agents` (layout, README, `preflight`/`manifest`/`rm`/`git-snapshot`/SSH helpers) or explicitly accept the manual fallbacks in [docs/host-readiness.md](docs/host-readiness.md).
+3. Add `~/.ssh/config` host blocks plus `ControlPersist` policy before using the remote-host rules; install `gitleaks` for the pre-commit scan.
+4. Resolve the license question (README + `LICENSE`).
+5. Add the first real personal skill under `harness/skills/<name>/` using [`docs/templates/SKILL.md`](docs/templates/SKILL.md), then `./bin/dsh link`.
+6. When an MCP server is adopted, add its row to the profile patch and `harness/mcp/servers.yaml` in the same commit.
+7. Re-run `./bin/dsh capture` after any change made in the DSH app, and commit.
 
 ## Known gaps
 
-- No user-global instructions are currently *deployed*; the file exists in the repo only.
+- Global rules are deployed, but their `/opt/agents` helpers, SSH host config, `gitleaks`, retention job and locks are absent; the rules must run on manual fallbacks. See [docs/host-readiness.md](docs/host-readiness.md).
+- `RULES.md` is not auto-loaded by DSH; it is a companion for composing subagent prompts and must be pasted or read explicitly.
 - No personal skills or MCP servers exist yet, so those paths are exercised by docs/checks, not real content.
 - The personal plugin's `link:` dependency is an absolute path; it is machine-specific even though it now points inside this repo. On a target machine, `apply --with-plugins` rewrites it.
 - The legacy pre-repo plugin directory is an identical duplicate (open question 2). Only the repo copy should be edited.
@@ -103,6 +106,7 @@ Add one row per working session, newest first. Keep it terse; details belong in 
 |---|---|---|
 | 2026-11-11 | Bootstrap | Repo initialized; DSH config inventoried; profile, personal plugin and instructions captured; CLI (`capture/apply/link/check/doctor`), docs, ADRs, manifest, CI added; validated and pushed to GitHub. |
 | 2026-11-11 | Plugin tracking | Documented `@local/pinned-workspaces`; repointed the live `desktop` profile link from the pre-repo directory to `harness/plugins/pinned-workspaces/`; captured the new dependency and inventory. |
+| 2026-11-11 | Global rules | Installed the user-supplied operating manual as the auto-loaded `AGENTS.md`; added the derived compact `RULES.md`; deployed both to `~/.agents/`; audited rule assumptions in `docs/host-readiness.md`. |
 
 ---
 

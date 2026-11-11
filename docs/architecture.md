@@ -20,6 +20,7 @@ DSH resolves both from the process environment. A profile row cannot redirect th
   dsh-runtimes/             # bundled node, pnpm, python
 ~/.agents/
   AGENTS.md                 # user-global instructions (symlink to repo)
+  RULES.md                  # compact rules for subagent prompts (symlink, not auto-loaded)
   skills/<name>/SKILL.md    # user skills (symlinks to repo)
 ```
 
@@ -102,6 +103,8 @@ Rules that matter:
 - `AGENTS.local.md` is for machine-local, uncommitted notes; this repo ignores `*.local.md`.
 
 **This repo:** `harness/instructions/AGENTS.md` → symlink at `~/.agents/AGENTS.md`. It is the base layer for every project; project-level `AGENTS.md` files (including the one at this repo's root) override it.
+
+`harness/instructions/RULES.md` → symlink at `~/.agents/RULES.md` is a **companion**, not a discovery file: DSH does not load it automatically. `AGENTS.md` points to it and requires rules 1–7 to be pasted into subagent prompts. Keep the two consistent; the manual owns procedures, the rules file owns the compact policy.
 
 ## 5. Skills
 

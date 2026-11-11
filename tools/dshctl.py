@@ -45,6 +45,8 @@ REQUIRED_DOCS = [
     "harness/plugins/README.md",
     "harness/mcp/servers.yaml",
     "harness/tools/README.md",
+    "harness/instructions/RULES.md",
+    "docs/host-readiness.md",
 ]
 
 SECRET_PATTERNS = [
@@ -632,12 +634,21 @@ def build_inventory(manifest: dict) -> dict:
                 "sha256": sha256_file(path),
                 "bytes": path.stat().st_size,
             }
-    instruction_source = next(
-        (a["source"] for a in link_artifacts(manifest) if a.get("kind") == "instructions"), None
-    )
-    if instruction_source and (ROOT / instruction_source).is_file():
-        path = ROOT / instruction_source
-        managed[instruction_source] = {"sha256": sha256_file(path), "bytes": path.stat().st_size}
+    instructions = []
+    for artifact in link_artifacts(manifest):
+        if artifact.get("kind") != "instructions":
+            continue
+        path = ROOT / artifact["source"]
+        if path.is_file():
+            managed[artifact["source"]] = {"sha256": sha256_file(path), "bytes": path.stat().st_size}
+        target = expand(artifact["target"])
+        instructions.append(
+            {
+                "source": artifact["source"],
+                "target": artifact["target"],
+                "deployed": target.is_symlink() or target.exists(),
+            }
+        )
     if skills_root.is_dir():
         for child in sorted(skills_root.glob("*/SKILL.md")):
             rel = str(child.relative_to(ROOT))
@@ -656,14 +667,6 @@ def build_inventory(manifest: dict) -> dict:
                 "deployed": (expand(plugin["target"]).exists() if plugin.get("target") else False),
             }
         )
-
-    instructions_target = next(
-        (a["target"] for a in link_artifacts(manifest) if a.get("kind") == "instructions"), None
-    )
-    instructions_deployed = False
-    if instructions_target:
-        target = expand(instructions_target)
-        instructions_deployed = target.is_symlink() or target.exists()
 
     return {
         "schema": 1,
@@ -704,11 +707,7 @@ def build_inventory(manifest: dict) -> dict:
             "bundled": bundled,
             "userRoot": display(agents_home / "skills"),
         },
-        "instructions": {
-            "source": instruction_source,
-            "target": instructions_target,
-            "deployed": instructions_deployed,
-        },
+        "instructions": instructions,
         "credentials": {
             "store": display(credentials),
             "refs": sorted(refs),

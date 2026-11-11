@@ -33,7 +33,8 @@ One artifact, one home. If something does not fit the table below, write the pro
 ├── harness/
 │   ├── manifest.json             every deployed artifact + deploy mode
 │   ├── instructions/
-│   │   └── AGENTS.md             user-global instructions
+│   │   ├── AGENTS.md             user-global manual (auto-loaded)
+│   │   └── RULES.md              compact rules 1-7 (subagent prompts, not auto-loaded)
 │   ├── profile/
 │   │   ├── README.md
 │   │   └── desktop/
@@ -61,7 +62,7 @@ One artifact, one home. If something does not fit the table below, write the pro
 
 | You are adding… | Put it in | Then |
 |---|---|---|
-| A rule that should apply to every project | `harness/instructions/AGENTS.md` | `./bin/dsh link` |
+| A rule that should apply to every project | `harness/instructions/AGENTS.md` (manual) or `RULES.md` (compact policy) | `./bin/dsh link` |
 | A rule for this repo only | `AGENTS.md` | commit |
 | A rule for one project | that project's `AGENTS.md` (use `docs/templates/project-AGENTS.md`) | commit in that project |
 | A reusable capability with instructions | `harness/skills/<name>/SKILL.md` | `./bin/dsh link`, new session |

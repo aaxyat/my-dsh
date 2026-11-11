@@ -18,6 +18,15 @@
       "notes": "User-global instruction file. Loaded before every project AGENTS.md; the ~/.dsh/AGENTS.md copy is intentionally not used so the file stays tool-agnostic."
     },
     {
+      "id": "rules-global",
+      "kind": "instructions",
+      "source": "harness/instructions/RULES.md",
+      "target": "~/.agents/RULES.md",
+      "mode": "symlink",
+      "authority": "repo",
+      "notes": "Compact rules 1-7 for subagent prompts. Not auto-loaded by DSH; AGENTS.md points to it and must be read on demand."
+    },
+    {
       "id": "skills",
       "kind": "skills",
       "source": "harness/skills",

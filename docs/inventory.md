@@ -17,9 +17,9 @@ Its purpose is provenance and drift detection: given a report from another machi
 | Profile dependencies | 1 (`@local/pinned-workspaces`, linked from `harness/plugins/`) |
 | Personal skills | 0 |
 | Bundled skills | 12 |
-| User-global instructions | present in repo, **not deployed** at capture time |
+| User-global instructions | `AGENTS.md` + `RULES.md`, deployed as symlinks |
 | Credential refs (names only) | `DEEPSEEK_API_KEY`, `OPENCODE_GO_API_KEY` |
-| Managed files recorded | 4 |
+| Managed files recorded | 5 |
 
 Bundled skills visible to the model on this install: `agent-experience`, `cordis-composition-reference`, `cordis-plugin-development`, `diagnose-windows-sandbox-acl`, `editing-cordis-compositions`, `office`, `office-docx`, `office-export-pdf`, `office-pptx`, `office-recalculate`, `office-render`, `office-xlsx`.
 
@@ -37,7 +37,7 @@ Bundled skills visible to the model on this install: `agent-experience`, `cordis
 | `profile.dependencies` | Profile npm dependencies (third-party and personal links). |
 | `plugins` | Installed dependencies, third-party list, and each personal plugin's install/enable/deploy state. |
 | `skills` | Personal skill names, bundled skill names, user skill root. |
-| `instructions` | Repo source, deploy target, and whether it was linked at capture time. |
+| `instructions` | List of instruction artifacts: repo source, deploy target, and whether each was linked at capture time. |
 | `credentials` | Credential store path and **names only**. Values are never read into the file. |
 | `managedFiles` | SHA-256 and byte size for every deployed source file (profile files, global instructions, skill files). |
 

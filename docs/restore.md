@@ -45,7 +45,7 @@ Read the dry-run output. On a clean machine every line should be `create`; anyth
 This:
 
 - copies the three profile files into `~/.dsh/profiles/desktop/`, backing up any existing versions under `~/.dsh/backups/my-dsh-<timestamp>/`;
-- creates `~/.agents/AGENTS.md` as a symlink to `harness/instructions/AGENTS.md`;
+- creates `~/.agents/AGENTS.md` and `~/.agents/RULES.md` as symlinks to `harness/instructions/`;
 - creates `~/.agents/skills/<name>` symlinks for every personal skill;
 - refuses to overwrite a differing live file unless `--force`.
 
@@ -71,7 +71,7 @@ Quit DSH completely and relaunch. Then check, in order:
 
 | Check | Expected |
 |---|---|
-| New session in any project | User-global instructions appear (the agent knows the repo conventions). |
+| New session in any project | Global `AGENTS.md` rules appear; check that `RULES.md` is present next to it. |
 | This repo opened as a workspace | Root `AGENTS.md` is loaded in addition to global ones. |
 | Skill catalog / `skill` tool | Every `harness/skills/*/SKILL.md` is listed. |
 | Model picker | `opencode-go` models from the patch are present; default is `deepseek-v4.1-flash`. |
