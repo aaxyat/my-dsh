@@ -8,7 +8,7 @@ Audit of the assumptions in [`harness/instructions/AGENTS.md`](../harness/instru
 | Host | Mac16,1 · arm64 · Darwin 27.0.0 |
 | DSH | desktop `0.2.2-rc.1`, profile `desktop` |
 | `/opt/agents` | Provisioned from [`agents/`](../agents/README.md); 10 helpers, `0700`, `bin/` locked |
-| Verdict | **Workspace ready; remote-host and hook integrations still missing.** `preflight` exits 0 with 7 warnings. |
+| Verdict | **Workspace and SSH ready; hook integrations still missing.** `preflight` exits 0 with 5 warnings. |
 
 ## Provisioned workspace
 
@@ -20,7 +20,6 @@ Audit of the assumptions in [`harness/instructions/AGENTS.md`](../harness/instru
 | `/opt/agents` is `0700` | `drwx------` | None |
 | `bin/` and every helper locked with `chflags uchg` | Locked and verified by `preflight` | Unlock deliberately to change |
 | Helpers exist and are executable | 10/10 | None |
-| `/agents` symlink alias | **Missing** — `/opt` is root-owned and sudo is not passwordless | `sudo ln -s /opt/agents /agents` manually |
 | `bin/` first on `PATH` | **Not wired** — provisioning does not edit shell profiles | Add `export PATH="/opt/agents/bin:$PATH"` yourself |
 | Retention LaunchAgent | **Not installed** — deliberately human-owned | Review and install from `agents/README.md` |
 
@@ -44,11 +43,26 @@ Smoke-test artifacts were removed; only audit lines remain in `/opt/agents/logs/
 
 | Rule assumption | Observed | Impact |
 |---|---|---|
-| `~/.ssh/config` defines `newton` and `mediaserver` | **No `~/.ssh/config`**; only `known_hosts` and an `agent/` directory | Host aliases and `ControlPersist` rules cannot be exercised |
-| Bitwarden SSH agent is the auth path | Socket `~/.bitwarden-ssh-agent.sock` exists, but `SSH_AUTH_SOCK` points at `/var/run/com.apple.launchd.../Listeners` | Agent auth will not use Bitwarden until the variable is set |
-| `ControlPersist 3m`, off for `mediaserver` | Not configured | The multiplexing-bypass risk described in §4 is absent for now |
+| `newton` and `mediaserver` resolve as hosts | **Tailscale MagicDNS**: `newton` → `100.94.136.32`, `mediaserver` → `100.74.97.34`; both are peers in `tailscale status` | No `Host` blocks needed; the shared `Host *` settings apply |
+| Bitwarden SSH agent is the auth path | **Configured and exercised.** `IdentityAgent` points at the socket; `ssh-verify newton` completed successfully through the agent; the agent lists one RSA key | Fixed; `mediaserver` stops earlier at host-key trust |
+| `ControlPersist 3m`, off for `mediaserver` | **Configured**: effective `ssh -G` shows `newton` → `auto` + `180`s, `mediaserver` → `false` + `no` | Matches §4; `/opt/agents/bin/ssh-verify` still bypasses multiplexing |
+| `mediaserver` host key is trusted | **Not in `known_hosts`**. Advertised ED25519 fingerprint: `SHA256:RglUseR9rW45O8xzdqCJt/+p9McsC7E3r81lwnNdabE` | Connection fails at host-key verification until the fingerprint is confirmed out of band |
 | Keychain item `newton-sudo` | Not verified | Do not rely on it until tested |
 | `sudo -S` can pipe a Keychain secret | Passwordless sudo is **not** available (`sudo -n true` requires a password) | The documented pattern will not work as written on this host |
+
+## Bitwarden SSH agent
+
+Fixed 2026-11-11. Three layers, because different processes inherit environment differently:
+
+| Layer | File | Purpose |
+|---|---|---|
+| ssh itself | `~/.ssh/config` | `Host *` + `IdentityAgent ~/.bitwarden-ssh-agent.sock`; works even when `SSH_AUTH_SOCK` is wrong |
+| zsh shells | `~/.zshenv` | exports `SSH_AUTH_SOCK` when the socket exists |
+| GUI/launchd | `launchctl setenv SSH_AUTH_SOCK …` | new GUI processes (including a restarted DSH) inherit it; **not persistent across reboot** |
+
+Verified: `ssh -G localhost` → `identityagent /Users/aaxyat/.bitwarden-ssh-agent.sock`; `ssh-add -l` lists one RSA key; `ssh-verify newton` completed through the agent. Multiplexing is active for `newton` and disabled for `mediaserver`. The DSH process running now still has the old environment until it is restarted; the ssh helpers work regardless because they honor `~/.ssh/config`.
+
+`mediaserver` was not authenticated: its host key is absent from `known_hosts`. Do not accept it automatically; confirm the fingerprint above through a trusted channel, then add it with `ssh-keyscan` or the first interactive connection.
 
 ## Git, hooks and secrets
 
@@ -72,14 +86,14 @@ Smoke-test artifacts were removed; only audit lines remain in `/opt/agents/logs/
 
 1. **`Write`/`Edit` over an existing file is gate-class.** In a clean Git repository the tracked-file exemption applies, but outside VCS almost every edit becomes a Five-Step Gate. This conflicts with "reversible work proceeds immediately". Recommendation: scope the clause to targets with no version history and no verified backup.
 2. **`security … | sudo -S`** requires passwordless sudo (not available here) and cannot feed a command that reads stdin. Prefer DSH approval or a scoped `NOPASSWD` rule for named commands.
-3. **`preflight` at every session** now works, but the 7 warnings are permanent until the host gaps above are closed; agents will repeat them once per session as the rule requires.
+3. **`preflight` at every session** now works, but the 5 warnings are permanent until the host gaps above are closed; agents will repeat them once per session as the rule requires.
 4. **Subagent rules are advisory.** Pasting rules 1–7 and requiring `AGENTS.md` §2 is the correct mechanism; compliance still needs review of their output.
 5. **`bin/` locking is a speed bump, not security.** The owner can always unlock; it exists to make self-modification visible.
 
 ## Recommended order
 
-1. Add `~/.ssh/config` host blocks, set `SSH_AUTH_SOCK`, and verify `newton`/`mediaserver` reachability from outside.
+1. Confirm the `mediaserver` ED25519 fingerprint out of band, then trust it and run `ssh-verify mediaserver`.
 2. Install `gitleaks` and the chained global pre-commit hook.
 3. Review and install the retention LaunchAgent; then let it own purges.
 4. Decide the non-VCS edit-gate policy before applying the rules broadly.
-5. Optional: `sudo ln -s /opt/agents /agents` and add `/opt/agents/bin` to `PATH`.
+5. Add `/opt/agents/bin` to `PATH`.

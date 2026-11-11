@@ -19,8 +19,9 @@ Provisioning is idempotent. It refuses to overwrite a differing installed helper
 | `/opt/agents/state` | checkpoints, indexes, resume state, locks | `locks/`, `provision.json` |
 | `/opt/agents/logs` | run, job and audit logs | `rm-audit.log`, `retention-audit.log` |
 | `/opt/agents/tmp` | scratch and manifests | freely deletable |
+| `/opt/agents/tools` | machine-local tool installs (for example `playwright-mcp/`) | provisioned separately; not locked |
 
-Everything is `0700`/`0600`; helpers run with `umask 077`. The workspace is owned by `aaxyat`. `/agents` is intended as a symlink alias — creating it needs root and is **not** automated.
+Everything is `0700`/`0600`; helpers run with `umask 077`. The workspace is owned by `aaxyat`. There is no root-level alias; always use the absolute `/opt/agents` path.
 
 ## Helpers
 
@@ -48,7 +49,7 @@ Python helpers support `--help`; the shell helpers print usage on a missing argu
 /opt/agents/bin/undo-rm <id>
 ```
 
-- Scratch (`/opt/agents/tmp`, `/tmp/agents-<uid>`) is removed for real.
+- Scratch (`/opt/agents/tmp`, `/tmp/agent-scratch-<uid>`) is removed for real.
 - Everything else is moved, with `meta.json` recording the original paths, the quote, the manifest hash (if `--manifest`) and the uid.
 - Audit lines are JSON appended to `/opt/agents/logs/rm-audit.log` (`0600`).
 - `undo-rm` refuses to overwrite an existing original path.
@@ -108,7 +109,6 @@ Then `launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/sh.omp.agents-rete
 
 ## Not automated
 
-- `/agents` symlink (needs root).
 - Shell `PATH` (edits outside the workspace).
 - LaunchAgent installation (human-owned).
 - Remote SSH host config and `gitleaks`; see [host readiness](../docs/host-readiness.md).

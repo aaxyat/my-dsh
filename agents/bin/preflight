@@ -4,6 +4,7 @@
 import os
 import re
 import shutil
+import socket
 import stat
 import subprocess
 import sys
@@ -94,12 +95,6 @@ else:
     warn("bin/ is not on PATH; call helpers absolutely or add it in your shell profile")
 
 print("\nhost integration")
-alias = Path("/agents")
-if alias.is_symlink() and os.path.realpath(str(alias)) == os.path.realpath(str(WORKSPACE)):
-    ok("/agents alias points at the workspace")
-else:
-    warn("/agents alias is missing (needs root: sudo ln -s /opt/agents /agents)")
-
 python = shutil.which("python3")
 if python:
     ok(f"python3: {python}")
@@ -107,30 +102,63 @@ else:
     fail("python3 not on PATH; helpers cannot run")
 
 config = Path.home() / ".ssh" / "config"
-if config.is_file():
-    text = config.read_text(encoding="utf-8", errors="replace")
-    hosts = set()
-    for line in text.splitlines():
-        match = re.match(r"(?i)^\s*Host\s+(.+)$", line)
-        if match:
-            hosts.update(match.group(1).split())
-    absent = [host for host in ("newton", "mediaserver") if host not in hosts]
-    if absent:
-        warn("ssh config is missing host alias(es): " + ", ".join(absent))
-    else:
-        ok("ssh config defines newton and mediaserver")
-    if "ControlPersist" in text:
-        ok("ssh config declares ControlPersist")
-    else:
-        warn("ssh config has no ControlPersist policy")
-else:
+config_text = config.read_text(encoding="utf-8", errors="replace") if config.is_file() else ""
+if not config_text:
     warn("~/.ssh/config is missing; remote-host rules cannot be exercised")
+else:
+    for host in ("newton", "mediaserver"):
+        try:
+            addresses = sorted({entry[4][0] for entry in
+                                socket.getaddrinfo(host, 22, proto=socket.IPPROTO_TCP)})
+        except OSError:
+            addresses = []
+        if addresses:
+            ok(f"tailnet MagicDNS resolves {host} ({', '.join(addresses)})")
+        else:
+            warn(f"cannot resolve {host}; check Tailscale MagicDNS or the tailnet connection")
+        try:
+            trusted = subprocess.run(["ssh-keygen", "-F", host],
+                                     capture_output=True, text=True, check=False)
+            if trusted.returncode != 0:
+                warn(f"{host} host key is not in known_hosts; verify its fingerprint before connecting")
+        except OSError:
+            warn("ssh-keygen is unavailable; cannot check known_hosts")
+    def effective(host, key):
+        try:
+            result = subprocess.run(["ssh", "-G", host],
+                                    capture_output=True, text=True, check=False)
+        except OSError:
+            return ""
+        for line in result.stdout.splitlines():
+            if line.lower().startswith(key + " "):
+                return line.split(None, 1)[1].strip()
+        return ""
+
+    newton_master = effective("newton", "controlmaster")
+    newton_persist = effective("newton", "controlpersist")
+    media_master = effective("mediaserver", "controlmaster")
+    if newton_master in ("auto", "yes") and newton_persist not in ("", "no", "0"):
+        ok(f"newton multiplexing: {newton_master}, persist {newton_persist}")
+    else:
+        warn(f"newton multiplexing not configured (master={newton_master!r}, persist={newton_persist!r})")
+    if media_master in ("no", "false"):
+        ok("mediaserver multiplexing is disabled")
+    else:
+        warn(f"mediaserver multiplexing is not disabled (master={media_master!r})")
 
 expected_sock = str(Path.home() / ".bitwarden-ssh-agent.sock")
-if os.environ.get("SSH_AUTH_SOCK") == expected_sock:
+identity_agent = False
+if config.is_file():
+    for line in config.read_text(encoding="utf-8", errors="replace").splitlines():
+        if re.match(r"(?i)^\s*IdentityAgent\s+", line) and "bitwarden" in line:
+            identity_agent = True
+            break
+if identity_agent:
+    ok("Bitwarden SSH agent configured via ~/.ssh/config IdentityAgent")
+elif os.environ.get("SSH_AUTH_SOCK") == expected_sock:
     ok("SSH_AUTH_SOCK points at the Bitwarden agent")
 else:
-    warn(f"SSH_AUTH_SOCK is {os.environ.get('SSH_AUTH_SOCK', '<unset>')}; expected {expected_sock}")
+    warn(f"Bitwarden agent not configured: SSH_AUTH_SOCK is {os.environ.get('SSH_AUTH_SOCK', '<unset>')} and no IdentityAgent")
 
 if shutil.which("gitleaks"):
     ok("gitleaks is installed")

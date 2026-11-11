@@ -76,7 +76,7 @@ Deletion goes through `/opt/agents/bin/rm` (soft-delete to `.trash`, audit line,
 
 ## 7. Durable workspace — `/opt/agents`
 
-- Durable artifacts live under `/opt/agents` (owner `aaxyat`; `/agents` alias), never loose in `~`, `/tmp`, or a repo.
+- Durable artifacts live under `/opt/agents` (owner `aaxyat`), never loose in `~`, `/tmp`, or a repo.
 - Layout: `bin` (locked), `data` (§2 soft delete), `state` (`0700`), `logs`, `tmp`.
 - Helpers: `preflight`, `manifest`, `rm`, `gate-rm`, `undo-rm`, `git-snapshot`, `ssh-probe`, `ssh-verify`, `sshd-apply`, `retention`. Missing or failing → say so, do the step by hand, never claim its result.
 - `bin/rm` and `gate-rm` soft-delete into `.trash`; purging it needs a literal instruction in the same turn plus `--quote "<their words>"`.

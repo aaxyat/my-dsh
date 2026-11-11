@@ -3,7 +3,7 @@
 
 Creates the layout, installs helpers, records a provisioning manifest, and locks
 bin/ with chflags on macOS. It never edits shell profiles, installs LaunchAgents,
-or creates the root-level /agents alias — those stay deliberate human actions.
+or installs a retention LaunchAgent — those stay deliberate human actions.
 """
 
 import argparse
@@ -22,7 +22,7 @@ SOURCE = REPO / "agents"
 DEFAULT_TARGET = Path("/opt/agents")
 VERSION = "1"
 
-DIRECTORIES = ["", "bin", "data", "data/.trash", "state", "state/locks", "logs", "tmp"]
+DIRECTORIES = ["", "bin", "data", "data/.trash", "state", "state/locks", "logs", "tmp", "tools"]
 
 
 def sha256(path):
@@ -176,7 +176,6 @@ def main(argv=None):
         print("")
         print("next steps (deliberate, not automated):")
         print('  export PATH="/opt/agents/bin:$PATH"   # add to your shell profile')
-        print("  sudo ln -s /opt/agents /agents        # only if you want the alias")
         print("  install the retention LaunchAgent after reviewing agents/README.md")
         print("  /opt/agents/bin/preflight")
     return 0

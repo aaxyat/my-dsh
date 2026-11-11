@@ -16,7 +16,7 @@ WORKSPACE = Path("/opt/agents")
 TRASH = WORKSPACE / "data" / ".trash"
 AUDIT = WORKSPACE / "logs" / "rm-audit.log"
 UID = os.getuid()
-SCRATCH_ROOTS = [WORKSPACE / "tmp", Path(f"/tmp/agents-{UID}")]
+SCRATCH_ROOTS = [WORKSPACE / "tmp", Path(f"/tmp/agent-scratch-{UID}")]
 PROTECTED = {
     Path("/"), Path.home(), WORKSPACE, WORKSPACE / "bin", WORKSPACE / "data",
     WORKSPACE / "state", WORKSPACE / "logs", WORKSPACE / "tmp", TRASH,

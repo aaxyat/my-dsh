@@ -98,7 +98,7 @@ Every tailnet-reachable device is a remote host under these rules — the defaul
 
 ## 7. Durable workspace — `/opt/agents`
 
-Anything an agent creates that must outlive the session lives under `/opt/agents` (owned by `aaxyat`; `/agents` is a symlink alias), never loose in `~`, `/tmp`, or a repo. Layout, rationale and provisioning: `/opt/agents/README.md`.
+Anything an agent creates that must outlive the session lives under `/opt/agents` (owned by `aaxyat`), never loose in `~`, `/tmp`, or a repo. Layout, rationale and provisioning: `/opt/agents/README.md`.
 
 | Path | Holds | Gate? |
 |---|---|---|
