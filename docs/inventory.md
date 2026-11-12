@@ -13,8 +13,8 @@ Its purpose is provenance and drift detection: given a report from another machi
 | DSH desktop | `0.2.2-rc.1` |
 | Profile | `desktop` |
 | Runtime | node `24.21.0` · pnpm `11.28.5` · python `3.12.14` |
-| Bundles | `dsh-base`, `dsh-web-app`, `@local/pinned-workspaces`, `@local/btw`, `@local/parallel-mcp`, `@local/playwright-mcp`, `@local/context7-mcp`, `@local/cloudflare-mcp` |
-| Profile dependencies | 6 (`@local/pinned-workspaces`, `@local/btw`, `@local/parallel-mcp`, `@local/playwright-mcp`, `@local/context7-mcp`, `@local/cloudflare-mcp`, linked from `harness/plugins/`) |
+| Bundles | `dsh-base`, `dsh-web-app`, `@local/pinned-workspaces`, `@local/btw`, `@local/parallel-mcp`, `@local/playwright-mcp`, `@local/context7-mcp`, `@local/cloudflare-mcp`, `dsh-widgets`, `@openviking/dsh-memory-plugin`, `billion-context` |
+| Profile dependencies | 9 (six linked `@local/*` bundles, `dsh-widgets` 1.8.5, `@openviking/dsh-memory-plugin` 0.5.34, and `billion-context` 0.1.213 from npm) |
 | Personal skills | 0 |
 | Bundled skills | 12 |
 | User-global instructions | `AGENTS.md` + `RULES.md`, deployed as symlinks |

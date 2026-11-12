@@ -11,7 +11,7 @@ It answers: where the setup stands, what was decided, what is still open, and wh
 | Field | Value |
 |---|---|
 | Status | Bootstrapped, provisioned, validated, published |
-| As of | 2026-11-11 |
+| As of | 2026-11-12 |
 | Repository | https://github.com/aaxyat/my-dsh (public) |
 | DSH desktop | `0.2.2-rc.1` (darwin / arm64) |
 | Profile | `desktop` |
@@ -19,8 +19,8 @@ It answers: where the setup stands, what was decided, what is still open, and wh
 | Shared agents home | `~/.agents` (created by `bin/dsh link`) |
 | Personal skills | 0 (scaffolding ready) |
 | Personal plugins | 6 installed (`@local/pinned-workspaces`, `@local/btw`, and the `parallel-mcp`, `playwright-mcp`, `context7-mcp`, `cloudflare-mcp` configuration bundles, linked from `harness/plugins/`) |
-| Third-party plugins | 0 |
-| MCP servers | 4 (`parallel-mcp`, `playwright`, `context7`, `cloudflare`) |
+| Third-party plugins | 3 (`dsh-widgets` 1.8.5, `@openviking/dsh-memory-plugin` 0.5.34 and `billion-context` 0.1.213 from npm) |
+| MCP servers | 4 configured (`parallel-mcp`, `playwright`, `context7`, `cloudflare`) plus the `openviking` MCP tools from the memory plugin |
 | Managed artifacts | 6 + 6 personal bundles |
 | Global rules | `AGENTS.md` + `RULES.md` deployed as symlinks |
 | Agent workspace | `/opt/agents` provisioned from `agents/` · 10 helpers · `bin/` locked |
@@ -41,6 +41,12 @@ Verified on the originating machine:
 - Playwright check: `tools/provision_playwright_mcp.py` installed `@playwright/mcp@0.0.85` and Chromium under `/opt/agents/tools/playwright-mcp`; `browser_navigate` loaded `https://example.com` and returned `Example Domain`, then closed cleanly.
 - Context7 check: `resolve-library-id` for React returned `/reactjs/react.dev` and four other candidates.
 - Cloudflare docs check: `search_cloudflare_documentation` for "Workers KV binding configuration" returned `developers.cloudflare.com` pages.
+- `dsh-widgets@1.8.5` installed from npm and selected; `plugin-manager` reports `include:widgets` as `active`. npm 1.8.5 is the latest published version (GitHub `main` is 1.9.0, unreleased). UI placement was not visually exercised.
+- OpenViking `0.5.4.1` installed with `uv` under Python 3.13; doctor passes, `/health` and `/ready` are 200 on `http://127.0.0.1:1933`. Embeddings use local Ollama `qwen3-embedding:0.6b` (1024 dims); the VLM is the free OpenCode Go `longcat-2.5-free` with `deepseek-v4.1-flash` as the ordered fallback; both use the OpenAI-compatible endpoint with `thinking: false` and the required `x-opencode-session` header.
+- `@openviking/dsh-memory-plugin@0.5.34` installed and selected; `include:openviking-memory-runtime` is `active`, `mcp__openviking__*` tools are in the catalog, and the four OpenViking skills appear.
+- Failover test: a temporary primary of `deepseek-v4.1-flash-free` returned 429 twice, the log reported `Credential zen-free-primary failed with rate_limit_error, trying next credential`, and the fallback completed the memory extraction.
+- End-to-end memory test: `remember` submitted a sentinel, `SessionCommit` processed it, and `search` returned `viking://user/default/memories/events/2026/11/12/openviking_pipeline_verified.md`; the VLM also answered a direct image prompt (`Teal`).
+- `billion-context` 0.1.213 installed and active: `include:bili-native` and `include:bili-compaction-gate` are `active`; the tool catalog exposes `compress`, `decompress`, `search_context` and `acp_status`. `acp_status` reports `ACTIVE SURFACE: host=billion-context 0.1.213`. A live round-trip compressed 553 messages (140.0K→1.3K) plus 12 messages (1.9K→430) into blocks `b1` and `b2`; `acp_status` reports 2 active blocks, 141.9K original and a 1.0× billed/estimate ratio.
 - `/opt/agents` provisioned and `preflight` exits 0 with 5 warnings (mediaserver host key, `gitleaks`, hooks, retention, PATH).
 - Bitwarden SSH agent verified end-to-end: `ssh-verify newton` succeeded; `newton` multiplexes for 180 s and `mediaserver` is exempt.
 - Tailnet names resolve directly: `newton` → `100.94.136.32`, `mediaserver` → `100.74.97.34`; no `Host` blocks needed.
@@ -109,14 +115,17 @@ Priority order:
 - `newton` works end-to-end through Bitwarden. `mediaserver` is reachable but its host key is untrusted (`SHA256:RglUseR9rW45O8xzdqCJt/+p9McsC7E3r81lwnNdabE`), so authentication was not exercised; `gitleaks`/global hooks are still missing. `sshd-apply` intentionally refuses to mutate.
 - Helper tests covered normal and guard paths, not large trees, cross-volume moves, or concurrent runs.
 - `RULES.md` is not auto-loaded by DSH; it is a companion for composing subagent prompts and must be pasted or read explicitly.
-- No personal skills exist yet; four MCP servers are installed and three were exercised with live calls. Parallel `web_research` needs sign-in; Cloudflare is the documentation server because the account API server needs OAuth; Context7 runs anonymously at lower limits.
+- No personal skills exist yet; four MCP servers are configured and all four were exercised with live calls. The OpenViking plugin adds `mcp__openviking__*` tools on top. Parallel `web_research` needs sign-in; Cloudflare is the documentation server because the account API server needs OAuth; Context7 runs anonymously at lower limits.
 - The personal plugin's `link:` dependency is an absolute path; it is machine-specific even though it now points inside this repo. On a target machine, `apply --with-plugins` rewrites it.
 - The Playwright row hardcodes the DSH runtime Node path and `/opt/agents/tools/playwright-mcp`; its Chromium download is ~584 MB. `tools/provision_playwright_mcp.py` recreates the tool but does not rewrite the row.
 - `@local/btw` was installed and selected while the current DSH process was already running. The server serves its client bundle and the bundle's unit/smoke checks pass, but the slash menu, bubble streaming, Stop/partial retention and read-only denial were not exercised through a live GUI turn; that needs the restart in Next action 1.
 - The legacy pre-repo plugin directory is an identical duplicate (open question 2). Only the repo copy should be edited.
 - `apply --with-plugins` could not drive pnpm inside this session's file sandbox (pnpm's store lives outside the workspace). The equivalent `pnpm add link:` command succeeded manually with full access; the script's wrapper logic is still unproven end-to-end on a fresh machine.
 - `check` warns rather than fails on machine-specific `link:` dependencies, uncaptured profile edits and missing inventory entries. It also warns that the four `*-mcp` bundles have no `dsh.client.platform`; that is expected because they are configuration-only and ship no Client half.
-- Inventory is a point-in-time snapshot; it is not a live monitor.
+- OpenViking starts at login through `~/Library/LaunchAgents/sh.omp.openviking-server.plist` (`KeepAlive`, logs under `/opt/agents/logs/`); Ollama starts through Homebrew's `sh.brew.ollama` service. `~/.openviking/ov.conf` (mode `0600`) holds the OpenCode Go key outside this repository; rotating the DSH key requires updating it.
+- OpenViking write/search works end to end; a later turn did receive an `<openviking-context>` recall block, so pre-step recall is working.
+- `billion-context` disables DSH auto-compaction by design and hands context policy to ACP; its Web `/compact` behavior and interaction with the OpenViking recall path were not exercised. The current session surface already had ACP tools before the profile bundle was added, so the bundle may be attaching to an existing proxy rather than spawning a second one.
+- OpenCode Zen's free text/vision models returned `FreeUsageLimitError` (429) for this key, and `jev-1.13-free` is a structured-decision endpoint, not a text/vision model. OpenViking therefore uses the Go-included free `longcat-2.5-free`; embeddings remain local.
 - Windows/PowerShell is out of scope for now; scripts assume POSIX.
 
 ## Session log
@@ -133,6 +142,9 @@ Add one row per working session, newest first. Keep it terse; details belong in 
 | 2026-11-11 | `/btw` plugin | Added `harness/plugins/btw/`: a Host + Web Client bundle (derived from Apache-2.0 `dsh-btw-marginalia`) for read-only `/btw` side questions, with committed `lib/`. Typechecked against 0.2.2-rc.1, 58/58 tests, build + smoke pass; linked and selected in the `desktop` profile, and the live Web server serves the client bundle. Live GUI turn still needs the restart. |
 | 2026-11-11 | Parallel search | Added the `@local/parallel-mcp` configuration-only bundle, linked and selected in the `desktop` profile; `mcp-parallel` is active and exposes `web_search`, `web_fetch`, `web_decisions` and search utilities. Anonymous mode; a live search succeeded, `web_research` needs sign-in. |
 | 2026-11-11 | More MCP servers | Added `playwright-mcp`, `context7-mcp` and `cloudflare-mcp` configuration bundles, all active. Provisioned Playwright MCP and Chromium under `/opt/agents/tools/playwright-mcp` with `tools/provision_playwright_mcp.py`; verified a real Playwright navigation, a Context7 library lookup and a Cloudflare docs search. |
+| 2026-11-12 | Widgets | Installed third-party `dsh-widgets@1.8.5` from npm; `include:widgets` is active and the profile selects it. npm 1.8.5 is the latest published release; GitHub main is 1.9.0. UI placement remains visually unverified. |
+| 2026-11-12 | OpenViking | Installed OpenViking `0.5.4.1` and Ollama; configured local `qwen3-embedding:0.6b` plus the free OpenCode Go `longcat-2.5-free` for the VLM with `deepseek-v4.1-flash` as fallback; server is healthy on 127.0.0.1:1933. Installed `@openviking/dsh-memory-plugin@0.5.34`; the runtime is active, `mcp__openviking__*` tools and the four OpenViking skills are present. A sentinel write/search round-trip succeeded. OpenViking now runs from a user LaunchAgent; Ollama runs from Homebrew services. |
+| 2026-11-12 | Context compression | Installed `billion-context` 0.1.213 into `desktop`; `bili-native` and `bili-compaction-gate` are active, the four ACP tools are in the catalog, and `acp_status` reports the surface. This is the DSH-native compression lane; Magic Context remains unsupported on DSH 0.2.2. |
 
 ---
 

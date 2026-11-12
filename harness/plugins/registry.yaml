@@ -70,6 +70,27 @@ bundles:
     reason: "Configuration-only bundle mounting the Cloudflare documentation MCP server (anonymous); account API access needs OAuth."
     added: "2026-11-11"
 
+  - name: "dsh-widgets"
+    version: "1.8.5"
+    source: "npm:dsh-widgets@1.8.5"
+    kind: third-party
+    reason: "Live widget rail on the right-hand strip: 61 cards for session, context, jobs, machine, quota and spend. UI-only; configured from Settings → Widgets. npm 1.8.5 is installed because 1.9.0 is not published yet."
+    added: "2026-11-12"
+
+  - name: "@openviking/dsh-memory-plugin"
+    version: "0.5.34"
+    source: "npm:@openviking/dsh-memory-plugin@0.5.34"
+    kind: third-party
+    reason: "OpenViking memory: auto-recall, session capture, viking:// MCP tools and bundled skills. Connects to a local OpenViking server at http://127.0.0.1:1933 with a local Ollama embedding model and the free OpenCode Go LongCat 2.5 vision model with DeepSeek V4.1 Flash as fallback."
+    added: "2026-11-12"
+
+  - name: "billion-context"
+    version: "0.1.213"
+    source: "npm:billion-context@0.1.213"
+    kind: third-party
+    reason: "Model-driven context compression for long single sessions: compress/decompress/search_context/acp_status tools, an ACP ledger, prefix-cache-aware summaries and Web status. Its bundle disables DSH auto-compaction so ACP owns the context policy."
+    added: "2026-11-12"
+
   # Example of an installed third-party bundle:
   # - name: "@scope/some-bundle"
   #   version: "1.2.3"

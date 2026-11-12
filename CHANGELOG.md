@@ -20,6 +20,9 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); version
 - `harness/plugins/context7-mcp/`: configuration-only bundle for Context7 library documentation (`resolve-library-id`, `query-docs`) over the anonymous remote endpoint.
 - `harness/plugins/cloudflare-mcp/`: configuration-only bundle for the Cloudflare documentation MCP server. The account API server (`mcp.cloudflare.com`) requires OAuth and is not mounted.
 - The live `desktop` profile links and selects all three bundles; `include:mcp-playwright`, `include:mcp-context7` and `include:mcp-cloudflare` are active.
+- Third-party `dsh-widgets@1.8.5` installed from npm and selected: a right-hand live widget rail with 61 session, machine, quota and cost cards. Recorded in `harness/plugins/registry.yaml`; not vendored. npm 1.8.5 is the latest published release.
+- OpenViking memory: installed OpenViking `0.5.4.1` with local Ollama `qwen3-embedding:0.6b` and the free OpenCode Go `longcat-2.5-free` VLM with `deepseek-v4.1-flash` as the ordered fallback; the server is healthy at `127.0.0.1:1933`. Installed `@openviking/dsh-memory-plugin@0.5.34`; the runtime is active and exposes `mcp__openviking__*` plus the OpenViking skills. A sentinel write and search round-trip succeeded. OpenViking runs from a user LaunchAgent and Ollama from Homebrew services. The server config is `~/.openviking/ov.conf` (mode `0600`), not in this repository.
+- Third-party `billion-context@0.1.213` installed from npm and selected: model-driven ACP context compression (`compress`, `decompress`, `search_context`, `acp_status`) for long single sessions. Its `bili-native` and `bili-compaction-gate` entries are active, and `acp_status` reports the running surface. The bundle disables DSH auto-compaction so ACP owns context policy. Recorded in `harness/plugins/registry.yaml`; not vendored.
 
 ### Added (agent workspace)
 

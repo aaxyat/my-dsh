@@ -104,7 +104,7 @@ Not managed: DSH application binaries, sessions, runtime toolchains, credentials
 ## Status
 
 Bootstrapped **2026-11-11** against DSH desktop **0.2.2-rc.1** on macOS (arm64), profile `desktop`.
-The global agent rules (`AGENTS.md` + `RULES.md`) are deployed from this repo and load in new sessions. Six personal bundles are installed from `harness/plugins/`: `@local/pinned-workspaces` (sidebar pins), `@local/btw` (read-only `/btw` side questions in the Web composer), and the configuration-only MCP bundles `@local/parallel-mcp`, `@local/playwright-mcp`, `@local/context7-mcp`, and `@local/cloudflare-mcp`. `/opt/agents` is provisioned with 10 helpers and a locked `bin/`; `preflight` exits 0 with warnings for the still-missing SSH config, `gitleaks`, hook chain and retention job — see [docs/host-readiness.md](docs/host-readiness.md).
+The global agent rules (`AGENTS.md` + `RULES.md`) are deployed from this repo and load in new sessions. Six personal bundles are installed from `harness/plugins/`: `@local/pinned-workspaces` (sidebar pins), `@local/btw` (read-only `/btw` side questions in the Web composer), and the configuration-only MCP bundles `@local/parallel-mcp`, `@local/playwright-mcp`, `@local/context7-mcp`, and `@local/cloudflare-mcp`. Third-party bundles: `dsh-widgets@1.8.5` adds the live widget rail, `@openviking/dsh-memory-plugin@0.5.34` connects cross-session memory to a local OpenViking server, and `billion-context@0.1.213` adds model-driven ACP context compression for long sessions. `/opt/agents` is provisioned with 10 helpers and a locked `bin/`; `preflight` exits 0 with warnings for the still-missing SSH config, `gitleaks`, hook chain and retention job — see [docs/host-readiness.md](docs/host-readiness.md).
 
 ## Documentation
 

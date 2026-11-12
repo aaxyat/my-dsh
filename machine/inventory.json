@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "generatedBy": "bin/dsh capture",
-  "capturedAt": "2026-11-11T17:49:32Z",
+  "capturedAt": "2026-11-12T04:36:11Z",
   "host": {
     "system": "Darwin",
     "release": "27.0.0",
@@ -32,7 +32,10 @@
       "@local/parallel-mcp",
       "@local/playwright-mcp",
       "@local/context7-mcp",
-      "@local/cloudflare-mcp"
+      "@local/cloudflare-mcp",
+      "dsh-widgets",
+      "@openviking/dsh-memory-plugin",
+      "billion-context"
     ],
     "dependencies": {
       "@local/btw": "link:/Users/aaxyat/Documents/Projects/my-dsh/harness/plugins/btw",
@@ -40,7 +43,10 @@
       "@local/context7-mcp": "link:/Users/aaxyat/Documents/Projects/my-dsh/harness/plugins/context7-mcp",
       "@local/parallel-mcp": "link:/Users/aaxyat/Documents/Projects/my-dsh/harness/plugins/parallel-mcp",
       "@local/pinned-workspaces": "link:/Users/aaxyat/Documents/Projects/my-dsh/harness/plugins/pinned-workspaces",
-      "@local/playwright-mcp": "link:/Users/aaxyat/Documents/Projects/my-dsh/harness/plugins/playwright-mcp"
+      "@local/playwright-mcp": "link:/Users/aaxyat/Documents/Projects/my-dsh/harness/plugins/playwright-mcp",
+      "@openviking/dsh-memory-plugin": "0.5.34",
+      "billion-context": "0.1.213",
+      "dsh-widgets": "1.8.5"
     }
   },
   "plugins": {
@@ -50,9 +56,16 @@
       "@local/context7-mcp",
       "@local/parallel-mcp",
       "@local/pinned-workspaces",
-      "@local/playwright-mcp"
+      "@local/playwright-mcp",
+      "@openviking/dsh-memory-plugin",
+      "billion-context",
+      "dsh-widgets"
     ],
-    "thirdParty": [],
+    "thirdParty": [
+      "@openviking/dsh-memory-plugin",
+      "billion-context",
+      "dsh-widgets"
+    ],
     "personal": [
       {
         "id": "pinned-workspaces",
@@ -167,8 +180,8 @@
       "bytes": 6519
     },
     "harness/profile/desktop/package.json": {
-      "sha256": "d09dc6a806bf018d2331702984a65e7749fcaec15b2325be8e91f8709dc0e6d5",
-      "bytes": 1023
+      "sha256": "ff388ce9c71007326e68f6e30a59662a4114d0f427ded42b4ab6daebf7e6e54a",
+      "bytes": 1223
     },
     "harness/profile/desktop/pnpm-workspace.yaml": {
       "sha256": "ae7c5b68e2f157528e62885804e69e88583897b775e03c86fcbe52feaf498aba",
