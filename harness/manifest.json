@@ -116,7 +116,7 @@
       "install": "link",
       "enabled": true,
       "target": "~/.dsh/profiles/desktop/node_modules/@local/cloudflare-mcp",
-      "notes": "Configuration-only bundle that inserts the Cloudflare documentation MCP client row (serverName cloudflare). The account API server needs OAuth and is not mounted."
+      "notes": "Configuration-only bundle that inserts the Cloudflare API MCP client row (serverName cloudflare) as a stdio mcp-remote bridge, because the endpoint needs OAuth and DSH's MCP client has no OAuth flow."
     }
   ],
   "mcp": {

@@ -44,10 +44,13 @@ servers:
     notes: "Context7 library documentation, anonymous (lower rate limits; an API key is optional). Delivered by the @local/context7-mcp bundle (patch id mcp-context7)."
 
   - serverName: cloudflare
-    transport: streamable-http
-    url: "https://docs.mcp.cloudflare.com/mcp"
+    transport: stdio
+    command: "/Users/aaxyat/.dsh/dsh-runtimes/dsh-primary-runtime/dependencies/node/bin/node"
+    args:
+      - "/opt/agents/tools/cloudflare-mcp-oauth/node_modules/mcp-remote/dist/proxy.js"
+      - "https://mcp.cloudflare.com/mcp"
     enabled: true
-    notes: "Cloudflare documentation MCP, anonymous. The account API server at https://mcp.cloudflare.com/mcp needs OAuth and is not mounted. Delivered by the @local/cloudflare-mcp bundle (patch id mcp-cloudflare)."
+    notes: "Full Cloudflare API (code mode: search, execute, docs, whoami) plus developer docs. The remote endpoint needs OAuth, which DSH's MCP client lacks, so it is mounted through the mcp-remote stdio bridge; tokens live in ~/.mcp-auth. Machine-local bridge provisioned by tools/provision_cloudflare_mcp_oauth.py; delivered by the @local/cloudflare-mcp bundle (patch id mcp-cloudflare)."
 
 # Example — stdio server:
 #

@@ -67,7 +67,7 @@ bundles:
     version: "1.0.0"
     source: "link:harness/plugins/cloudflare-mcp"
     kind: personal
-    reason: "Configuration-only bundle mounting the Cloudflare documentation MCP server (anonymous); account API access needs OAuth."
+    reason: "Configuration-only bundle mounting the full Cloudflare API MCP server through the mcp-remote stdio bridge, because DSH's MCP client has no OAuth flow."
     added: "2026-11-11"
 
   - name: "dsh-widgets"
@@ -89,6 +89,20 @@ bundles:
     source: "npm:billion-context@0.1.213"
     kind: third-party
     reason: "Model-driven context compression for long single sessions: compress/decompress/search_context/acp_status tools, an ACP ledger, prefix-cache-aware summaries and Web status. Its bundle disables DSH auto-compaction so ACP owns the context policy."
+    added: "2026-11-12"
+
+  - name: "aegis"
+    version: "2.15.0"
+    source: "github:GanyuanRan/Aegis#v2.15.0"
+    kind: third-party
+    reason: "Aegis method pack: 23 reusable workflow skills plus a native filesystem skill provider and deferred routing bootstrap. Installed as a Desktop profile bundle; the Electron app owns the desktop profile, so use its plugin manager for updates."
+    added: "2026-11-12"
+
+  - name: "dshmarket"
+    version: "1.73.17"
+    source: "npm:dshmarket@^1.73.17"
+    kind: third-party
+    reason: "Visual plugin market for the DSH Web UI: browse, search and one-click install community plugins. Installed in both the desktop profile (app plugin manager) and the web profile (CLI); the desktop row is active. The Web profile was installed but its UI was not booted through the temporary CLI, so visual verification remains."
     added: "2026-11-12"
 
   # Example of an installed third-party bundle:

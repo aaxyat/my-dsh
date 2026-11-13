@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "Cloudflare documentation MCP for DSH.",
+  "description": "Cloudflare API and docs MCP for DSH.",
   "exports": {
     "./locale/*.json": "./locale/*.json",
     "./icon": "./icon.svg"

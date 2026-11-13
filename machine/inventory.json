@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "generatedBy": "bin/dsh capture",
-  "capturedAt": "2026-11-12T04:36:11Z",
+  "capturedAt": "2026-11-12T12:23:11Z",
   "host": {
     "system": "Darwin",
     "release": "27.0.0",
@@ -35,7 +35,9 @@
       "@local/cloudflare-mcp",
       "dsh-widgets",
       "@openviking/dsh-memory-plugin",
-      "billion-context"
+      "billion-context",
+      "aegis",
+      "dshmarket"
     ],
     "dependencies": {
       "@local/btw": "link:/Users/aaxyat/Documents/Projects/my-dsh/harness/plugins/btw",
@@ -45,8 +47,10 @@
       "@local/pinned-workspaces": "link:/Users/aaxyat/Documents/Projects/my-dsh/harness/plugins/pinned-workspaces",
       "@local/playwright-mcp": "link:/Users/aaxyat/Documents/Projects/my-dsh/harness/plugins/playwright-mcp",
       "@openviking/dsh-memory-plugin": "0.5.34",
+      "aegis": "github:GanyuanRan/Aegis#v2.15.0",
       "billion-context": "0.1.213",
-      "dsh-widgets": "1.8.5"
+      "dsh-widgets": "1.8.5",
+      "dshmarket": "^1.73.17"
     }
   },
   "plugins": {
@@ -58,13 +62,17 @@
       "@local/pinned-workspaces",
       "@local/playwright-mcp",
       "@openviking/dsh-memory-plugin",
+      "aegis",
       "billion-context",
-      "dsh-widgets"
+      "dsh-widgets",
+      "dshmarket"
     ],
     "thirdParty": [
       "@openviking/dsh-memory-plugin",
+      "aegis",
       "billion-context",
-      "dsh-widgets"
+      "dsh-widgets",
+      "dshmarket"
     ],
     "personal": [
       {
@@ -176,12 +184,12 @@
   },
   "managedFiles": {
     "harness/profile/desktop/cordis.patch.yml": {
-      "sha256": "af219b58560d886094c1d13e9fbf32f6408f8a92dffefb4216ea3259bc04a740",
-      "bytes": 6519
+      "sha256": "d182ad742426059dc4dd3216b1acdc53cf40c81fe49b144f52988ddd97d3636c",
+      "bytes": 6648
     },
     "harness/profile/desktop/package.json": {
-      "sha256": "ff388ce9c71007326e68f6e30a59662a4114d0f427ded42b4ab6daebf7e6e54a",
-      "bytes": 1223
+      "sha256": "92ae550085a4c3d42f36a5b164149b6071b81d398c1fe79c7cd64e61128b30c6",
+      "bytes": 1338
     },
     "harness/profile/desktop/pnpm-workspace.yaml": {
       "sha256": "ae7c5b68e2f157528e62885804e69e88583897b775e03c86fcbe52feaf498aba",

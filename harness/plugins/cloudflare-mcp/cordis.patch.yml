@@ -1,11 +1,26 @@
-# Cloudflare documentation MCP, anonymous remote endpoint.
-# Account-wide API access uses https://mcp.cloudflare.com/mcp and OAuth; DSH
-# does not provide an MCP OAuth flow, so this bundle uses the docs server.
+# Cloudflare API MCP, mounted through the mcp-remote stdio bridge.
+#
+# https://mcp.cloudflare.com/mcp challenges every request with an OAuth 401 and
+# DSH's MCP client has no OAuth flow (no authorization handler, no token store,
+# no sign-in state — see @deepseek-ai/dsh-mcp-manager's "No OAuth flow" known
+# limitation). mcp-remote performs discovery, dynamic client registration and
+# PKCE in the browser, then keeps the tokens under ~/.mcp-auth and presents them
+# as a plain stdio MCP server.
+#
+# The bridge and its pinned dependencies are installed under
+# /opt/agents/tools/cloudflare-mcp-oauth by
+# tools/provision_cloudflare_mcp_oauth.py; the paths below are machine-specific.
+# Re-authenticate with:
+#   <node> /opt/agents/tools/cloudflare-mcp-oauth/node_modules/mcp-remote/dist/client.js \
+#     https://mcp.cloudflare.com/mcp
 - insert:
     - id: mcp-cloudflare
       name: '@deepseek-ai/dsh-mcp-client'
       config:
         serverName: cloudflare
-        transport: streamable-http
-        url: https://docs.mcp.cloudflare.com/mcp
+        transport: stdio
+        command: "/Users/aaxyat/.dsh/dsh-runtimes/dsh-primary-runtime/dependencies/node/bin/node"
+        args:
+          - "/opt/agents/tools/cloudflare-mcp-oauth/node_modules/mcp-remote/dist/proxy.js"
+          - "https://mcp.cloudflare.com/mcp"
         failOnStartupError: true

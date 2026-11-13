@@ -9,8 +9,10 @@
     "@local/pinned-workspaces": "link:/Users/aaxyat/Documents/Projects/my-dsh/harness/plugins/pinned-workspaces",
     "@local/playwright-mcp": "link:/Users/aaxyat/Documents/Projects/my-dsh/harness/plugins/playwright-mcp",
     "@openviking/dsh-memory-plugin": "0.5.34",
+    "aegis": "github:GanyuanRan/Aegis#v2.15.0",
     "billion-context": "0.1.213",
-    "dsh-widgets": "1.8.5"
+    "dsh-widgets": "1.8.5",
+    "dshmarket": "^1.73.17"
   },
   "dsh": {
     "profile": {
@@ -25,7 +27,9 @@
         "@local/cloudflare-mcp",
         "dsh-widgets",
         "@openviking/dsh-memory-plugin",
-        "billion-context"
+        "billion-context",
+        "aegis",
+        "dshmarket"
       ]
     }
   }

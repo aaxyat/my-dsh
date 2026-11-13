@@ -8,21 +8,21 @@ Its purpose is provenance and drift detection: given a report from another machi
 
 | Field | Value |
 |---|---|
-| Captured | 2026-11-11 (UTC) |
+| Captured | 2026-11-12 (UTC) |
 | Host | Mac16,1 · arm64 · Darwin 27.0.0 |
 | DSH desktop | `0.2.2-rc.1` |
 | Profile | `desktop` |
 | Runtime | node `24.21.0` · pnpm `11.28.5` · python `3.12.14` |
-| Bundles | `dsh-base`, `dsh-web-app`, `@local/pinned-workspaces`, `@local/btw`, `@local/parallel-mcp`, `@local/playwright-mcp`, `@local/context7-mcp`, `@local/cloudflare-mcp`, `dsh-widgets`, `@openviking/dsh-memory-plugin`, `billion-context` |
-| Profile dependencies | 9 (six linked `@local/*` bundles, `dsh-widgets` 1.8.5, `@openviking/dsh-memory-plugin` 0.5.34, and `billion-context` 0.1.213 from npm) |
+| Bundles | `dsh-base`, `dsh-web-app`, `@local/pinned-workspaces`, `@local/btw`, `@local/parallel-mcp`, `@local/playwright-mcp`, `@local/context7-mcp`, `@local/cloudflare-mcp`, `dsh-widgets`, `@openviking/dsh-memory-plugin`, `billion-context`, `aegis`, `dshmarket` |
+| Profile dependencies | 11 (six linked `@local/*` bundles, `dsh-widgets` 1.8.5, `@openviking/dsh-memory-plugin` 0.5.34, `billion-context` 0.1.213 from npm, `aegis` 2.15.0 from a GitHub tag, and `dshmarket` 1.73.17 from npm) |
 | Personal skills | 0 |
-| Bundled skills | 12 |
+| Bundled skills | 12 built-in; Aegis contributes 23 more at runtime |
 | User-global instructions | `AGENTS.md` + `RULES.md`, deployed as symlinks |
 | Agent workspace | `/opt/agents` · 10 helpers · `bin/` locked |
 | Credential refs (names only) | `DEEPSEEK_API_KEY`, `OPENCODE_GO_API_KEY` |
 | Managed files recorded | 5 |
 
-Bundled skills visible to the model on this install: `agent-experience`, `cordis-composition-reference`, `cordis-plugin-development`, `diagnose-windows-sandbox-acl`, `editing-cordis-compositions`, `office`, `office-docx`, `office-export-pdf`, `office-pptx`, `office-recalculate`, `office-render`, `office-xlsx`.
+Bundled skills visible to the model on this install: `agent-experience`, `cordis-composition-reference`, `cordis-plugin-development`, `diagnose-windows-sandbox-acl`, `editing-cordis-compositions`, `office`, `office-docx`, `office-export-pdf`, `office-pptx`, `office-recalculate`, `office-render`, `office-xlsx`. The `aegis` bundle adds 23 skills through its native filesystem provider; they are not part of `machine/inventory.json` → `skills.bundled`.
 
 ## Schema
 

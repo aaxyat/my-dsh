@@ -23,6 +23,8 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); version
 - Third-party `dsh-widgets@1.8.5` installed from npm and selected: a right-hand live widget rail with 61 session, machine, quota and cost cards. Recorded in `harness/plugins/registry.yaml`; not vendored. npm 1.8.5 is the latest published release.
 - OpenViking memory: installed OpenViking `0.5.4.1` with local Ollama `qwen3-embedding:0.6b` and the free OpenCode Go `longcat-2.5-free` VLM with `deepseek-v4.1-flash` as the ordered fallback; the server is healthy at `127.0.0.1:1933`. Installed `@openviking/dsh-memory-plugin@0.5.34`; the runtime is active and exposes `mcp__openviking__*` plus the OpenViking skills. A sentinel write and search round-trip succeeded. OpenViking runs from a user LaunchAgent and Ollama from Homebrew services. The server config is `~/.openviking/ov.conf` (mode `0600`), not in this repository.
 - Third-party `billion-context@0.1.213` installed from npm and selected: model-driven ACP context compression (`compress`, `decompress`, `search_context`, `acp_status`) for long single sessions. Its `bili-native` and `bili-compaction-gate` entries are active, and `acp_status` reports the running surface. The bundle disables DSH auto-compaction so ACP owns context policy. Recorded in `harness/plugins/registry.yaml`; not vendored.
+- Third-party `aegis` 2.15.0 installed from GitHub tag `v2.15.0` as a Desktop profile bundle: a method pack with 23 skills, a native filesystem skill provider and a deferred routing bootstrap. `include:aegis-method-pack` is active; the module is `aegis/extensions/dsh/index.js`. Doctor returned `ok: true`, `workspaceSupport: available` and `configStatus: configured` from the installed method-pack root. A fresh Desktop session received the bootstrap after its first tool calls and loaded `systematic-debugging`. Recorded in `harness/plugins/registry.yaml`; not vendored.
+- Third-party `dshmarket` 1.73.17 installed from npm into both the `web` profile and the `desktop` profile: a visual in-app plugin market with browse, search and one-click install. `include:dsh-market` is active in Desktop; the web profile package and `dsh-market` bundle patch are recorded. The web UI could not boot through the temporary CLI (missing Node ABI 137 native binding), so the market page is not visually verified. Recorded in `harness/plugins/registry.yaml`; not vendored.
 
 ### Added (agent workspace)
 
@@ -30,6 +32,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); version
 - `tools/provision_agents.py`: idempotent installer with `--dry-run`, `--force`, `--no-lock`; records `state/provision.json` and locks `bin/` with `chflags`.
 - `manifest.agentWorkspace` and inventory reporting for the installed workspace.
 - `docs/host-readiness.md`: refreshed with provisioned status, smoke-test evidence and remaining SSH/hook/retention gaps.
+
+### Changed
+
+- `@local/cloudflare-mcp` now mounts the full Cloudflare API (code mode: `search`, `execute`, `docs`, `whoami`) instead of the anonymous documentation server. DSH's MCP client has no OAuth flow — no authorization handler, no token store, no sign-in state — so the row is a stdio `mcp-remote` bridge that speaks OAuth to `https://mcp.cloudflare.com/mcp` and stores tokens in `~/.mcp-auth`. Added `tools/provision_cloudflare_mcp_oauth.py` (pinned `mcp-remote@0.16.6`, `--ignore-scripts`, idempotent) to install it under `/opt/agents/tools/cloudflare-mcp-oauth`. Publish-time and dependency scripts were audited: the tree declares no `preinstall`/`install`/`postinstall` hook, opens no non-loopback listener, and contacts no endpoint other than the server's own OAuth metadata and token endpoints.
 
 ### Fixed
 
