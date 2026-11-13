@@ -26,6 +26,7 @@ VERSION = "0.1.0"
 ROOT = Path(__file__).resolve().parent.parent
 MANIFEST_PATH = ROOT / "harness" / "manifest.json"
 INVENTORY_PATH = ROOT / "machine" / "inventory.json"
+SKILL_PACKS_PATH = ROOT / "harness" / "skills" / "packs.json"
 
 REQUIRED_DOCS = [
     "README.md",
@@ -138,7 +139,8 @@ class Findings:
         self.title = title
         self.errors = []
         self.warnings = []
-        print(f"{self.title}")
+        if self.title:
+            print(f"{self.title}")
 
     def error(self, message: str) -> None:
         self.errors.append(message)
@@ -183,8 +185,387 @@ def link_artifacts(manifest: dict):
     return [a for a in manifest.get("artifacts", []) if a.get("mode") in ("symlink", "symlink-tree")]
 
 
+def pack_artifacts(manifest: dict):
+    return [a for a in manifest.get("artifacts", []) if a.get("mode") == "packs"]
+
+
 def profile_dir(manifest: dict) -> Path:
     return expand(manifest["homes"]["dsh"]) / "profiles" / manifest["profile"]
+
+
+# --------------------------------------------------------------------------
+# skill packs
+#
+# Third-party skills are never vendored. harness/skills/packs.json records the
+# upstream repository, the reviewed commit and the selected skill directories;
+# `skills sync` clones each pack into the agent workspace and links only those
+# directories into the agents home, where DeepSeek Harness discovers them.
+# --------------------------------------------------------------------------
+
+SKILL_PACK_ID_RE = re.compile(r"^[a-z0-9][a-z0-9-]*$")
+SKILL_PACK_COMMIT_RE = re.compile(r"^[0-9a-f]{40}$")
+
+
+def load_skill_packs() -> dict:
+    if not SKILL_PACKS_PATH.is_file():
+        raise SystemExit(f"error: {SKILL_PACKS_PATH.relative_to(ROOT)} is missing")
+    try:
+        data = read_json(SKILL_PACKS_PATH)
+    except (OSError, ValueError) as exc:
+        raise SystemExit(f"error: cannot parse {SKILL_PACKS_PATH.relative_to(ROOT)}: {exc}")
+    if not isinstance(data, dict):
+        raise SystemExit(f"error: {SKILL_PACKS_PATH.relative_to(ROOT)} must contain a JSON object")
+    return data
+
+
+def skill_stage_dir(manifest: dict) -> Path:
+    workspace = manifest.get("agentWorkspace") or {}
+    base = expand(workspace.get("target") or "~/.cache/my-dsh")
+    return base / "tools" / "skill-packs"
+
+
+def skill_link_root(manifest: dict) -> Path:
+    for artifact in pack_artifacts(manifest):
+        return expand(artifact["target"])
+    return expand(manifest["homes"]["agents"]) / "skills"
+
+
+def validate_skill_packs(data: dict, findings: Findings) -> None:
+    label = "harness/skills/packs.json"
+    if data.get("version") != 1:
+        findings.error(f"{label}: version must be 1")
+    packs = data.get("packs")
+    if not isinstance(packs, list) or not packs:
+        findings.error(f"{label}: 'packs' must be a non-empty list")
+        return
+    seen_ids = set()
+    owners = {}
+    local = {
+        child.name
+        for child in (ROOT / "harness" / "skills").iterdir()
+        if child.is_dir() and not child.name.startswith((".", "_"))
+    } if (ROOT / "harness" / "skills").is_dir() else set()
+    for index, pack in enumerate(packs):
+        plabel = f"{label}: packs[{index}]"
+        if not isinstance(pack, dict):
+            findings.error(f"{plabel} must be an object")
+            continue
+        pack_id = pack.get("id")
+        if not isinstance(pack_id, str) or not SKILL_PACK_ID_RE.match(pack_id):
+            findings.error(f"{plabel}: 'id' must be lower-case kebab-case")
+        elif pack_id in seen_ids:
+            findings.error(f"{label}: duplicate pack id '{pack_id}'")
+        else:
+            seen_ids.add(pack_id)
+            plabel = f"{label}: {pack_id}"
+        for key in ("title", "repo", "license"):
+            if not isinstance(pack.get(key), str) or not pack[key].strip():
+                findings.error(f"{plabel}: '{key}' must be a non-empty string")
+        commit = pack.get("commit")
+        if not isinstance(commit, str) or not SKILL_PACK_COMMIT_RE.match(commit):
+            findings.error(f"{plabel}: 'commit' must be a full 40-character commit SHA")
+        include = pack.get("include")
+        if not isinstance(include, list) or not include:
+            findings.error(f"{plabel}: 'include' must be a non-empty list")
+        else:
+            for entry in include:
+                if not isinstance(entry, str) or entry.startswith("/") or ".." in Path(entry).parts:
+                    findings.error(f"{plabel}: include entry {entry!r} must be a repo-relative path")
+                    continue
+                name = Path(entry).name
+                if name in owners:
+                    findings.error(
+                        f"{plabel}: skill name '{name}' is already provided by pack '{owners[name]}'"
+                    )
+                elif name in local:
+                    findings.error(
+                        f"{plabel}: skill name '{name}' collides with personal skill harness/skills/{name}"
+                    )
+                else:
+                    owners[name] = pack_id
+        exclude = pack.get("exclude", {})
+        if not isinstance(exclude, dict):
+            findings.error(f"{plabel}: 'exclude' must be an object mapping path to reason")
+        else:
+            for path, reason in exclude.items():
+                if not isinstance(reason, str) or len(reason.strip()) < 3:
+                    findings.error(f"{plabel}: exclude '{path}' needs a reason")
+    skipped = data.get("skipped", [])
+    if not isinstance(skipped, list):
+        findings.error(f"{label}: 'skipped' must be a list")
+    else:
+        for index, entry in enumerate(skipped):
+            if not isinstance(entry, dict) or not entry.get("id") or not entry.get("reason"):
+                findings.error(f"{label}: skipped[{index}] needs 'id' and 'reason'")
+
+
+def git_head(directory: Path) -> str:
+    result = run(["git", "-C", str(directory), "rev-parse", "HEAD"])
+    return result.stdout.strip() if result.returncode == 0 else ""
+
+
+def git_failure(result) -> str:
+    text = (result.stderr or result.stdout or "").strip()
+    return text.splitlines()[-1] if text else f"exit {result.returncode}"
+
+
+def ensure_pack_checkout(pack: dict, stage: Path, findings: Findings) -> bool:
+    """Clone the pack and check out its pinned commit. True when the tree is at the pin."""
+    dest = stage / pack["id"]
+    commit = pack["commit"]
+    if not (dest / ".git").exists():
+        if dest.exists():
+            findings.error(f"{pack['id']}: {display(dest)} exists but is not a git checkout")
+            return False
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        cloned = run(
+            ["git", "clone", "--quiet", "--no-checkout", "--filter=blob:none", pack["repo"], str(dest)]
+        )
+        if cloned.returncode != 0:
+            findings.error(f"{pack['id']}: git clone failed: {git_failure(cloned)}")
+            return False
+    if git_head(dest) != commit:
+        fetched = run(["git", "-C", str(dest), "fetch", "--quiet", "--depth", "1", "origin", commit])
+        if fetched.returncode != 0:
+            # Servers that refuse a bare-SHA fetch still accept a branch fetch.
+            fetched = run(["git", "-C", str(dest), "fetch", "--quiet", "origin"])
+        if fetched.returncode != 0:
+            findings.error(f"{pack['id']}: git fetch failed: {git_failure(fetched)}")
+            return False
+        checked_out = run(["git", "-C", str(dest), "checkout", "--quiet", "--detach", commit])
+        if checked_out.returncode != 0:
+            findings.error(
+                f"{pack['id']}: cannot check out {commit[:12]}: {git_failure(checked_out)}"
+            )
+            return False
+        if git_head(dest) != commit:
+            findings.error(
+                f"{pack['id']}: checkout landed on {git_head(dest)[:12] or 'nothing'}, not {commit[:12]}"
+            )
+            return False
+    # A `clone --no-checkout` leaves the index populated and the worktree empty,
+    # so `checkout` alone can report success without writing a single file.
+    # Reset is what actually materializes the tree.
+    reset = run(["git", "-C", str(dest), "reset", "--hard", "--quiet"])
+    if reset.returncode != 0:
+        findings.error(f"{pack['id']}: git reset failed: {git_failure(reset)}")
+        return False
+    return True
+
+
+def collect_pack_links(packs, stage: Path, findings: Findings) -> dict:
+    """Map skill name -> checked-out skill directory for every selected entry."""
+    links = {}
+    for pack in packs:
+        base = stage / pack["id"]
+        for entry in pack["include"]:
+            directory = base / entry
+            skill_md = directory / "SKILL.md"
+            if not skill_md.is_file():
+                findings.error(f"{pack['id']}: {entry}/SKILL.md is missing at the pinned commit")
+                continue
+            fields, _body = parse_front_matter(skill_md)
+            if fields is None:
+                findings.error(f"{pack['id']}: {entry}/SKILL.md has no YAML front matter")
+                continue
+            name = fields.get("name") or directory.name
+            if name != directory.name:
+                findings.error(
+                    f"{pack['id']}: {entry}/SKILL.md declares name '{name}' but the directory is "
+                    f"'{directory.name}'; the link would shadow or mismatch"
+                )
+                continue
+            if not fields.get("description"):
+                findings.warn(f"{pack['id']}: {entry}/SKILL.md has no description; the model cannot route to it")
+            if name in links:
+                findings.error(f"duplicate skill name '{name}' across packs")
+                continue
+            links[name] = directory
+    return links
+
+
+def describe_pack_links(manifest: dict) -> dict:
+    """Report pack state without touching the network."""
+    data = load_skill_packs()
+    stage = skill_stage_dir(manifest)
+    root = skill_link_root(manifest)
+    selected, problems = {}, []
+    for pack in data["packs"]:
+        dest = stage / pack["id"]
+        head = git_head(dest) if (dest / ".git").exists() else ""
+        if not head:
+            problems.append(f"{pack['id']} is not cloned ({display(dest)})")
+            continue
+        if head != pack["commit"]:
+            problems.append(f"{pack['id']} is at {head[:12]}, pinned {pack['commit'][:12]}")
+            continue
+        for entry in pack["include"]:
+            if not (dest / entry / "SKILL.md").is_file():
+                problems.append(f"{pack['id']}: {entry}/SKILL.md is missing from the checkout")
+                continue
+            selected.setdefault(Path(entry).name, []).append(pack["id"])
+    linked, stale = [], []
+    if root.is_dir():
+        stage_real = os.path.realpath(str(stage))
+        for entry in sorted(root.iterdir()):
+            if not entry.is_symlink():
+                continue
+            real = os.path.realpath(str(entry))
+            if not (real + os.sep).startswith(stage_real + os.sep):
+                continue
+            if entry.name in selected:
+                linked.append(entry.name)
+            else:
+                stale.append(entry.name)
+    missing = sorted(name for name in selected if name not in linked)
+    return {
+        "packs": data["packs"],
+        "selected": selected,
+        "linked": linked,
+        "stale": stale,
+        "missing": missing,
+        "problems": problems,
+    }
+
+
+def sync_skill_packs(manifest: dict, dry_run: bool = False, offline: bool = False, prune: bool = True) -> int:
+    print(f"skills — {'dry run: ' if dry_run else ''}{'offline' if offline else 'pinned packs'}")
+    findings = Findings("")
+    data = load_skill_packs()
+    validate_skill_packs(data, findings)
+    if findings.errors:
+        print("\n  refused: fix harness/skills/packs.json before syncing")
+        return 1
+    packs = data["packs"]
+    stage = skill_stage_dir(manifest)
+    root = skill_link_root(manifest)
+    for pack in packs:
+        dest = stage / pack["id"]
+        if offline:
+            if not (dest / ".git").exists():
+                findings.error(f"{pack['id']}: not cloned yet ({display(dest)}); run without --offline")
+            elif git_head(dest) != pack["commit"]:
+                findings.error(f"{pack['id']}: checkout is not at the pinned commit; run without --offline")
+            else:
+                print(f"  ok        {pack['id']} @ {pack['commit'][:12]}")
+            continue
+        if dry_run:
+            if (dest / ".git").exists() and git_head(dest) == pack["commit"]:
+                print(f"  ok        {pack['id']} @ {pack['commit'][:12]}")
+            elif (dest / ".git").exists():
+                print(f"  would fetch {pack['id']} @ {pack['commit'][:12]}")
+            else:
+                print(f"  would clone {pack['id']} @ {pack['commit'][:12]} -> {display(dest)}")
+            continue
+        fresh = not (dest / ".git").exists()
+        if ensure_pack_checkout(pack, stage, findings):
+            print(f"  {'cloned   ' if fresh else 'ok       '} {pack['id']} @ {pack['commit'][:12]}")
+    if findings.errors:
+        print("\n  refused: no links were changed")
+        return 1
+    if dry_run and not (stage / packs[0]["id"] / packs[0]["include"][0] / "SKILL.md").is_file():
+        print("\n  would link the selected skills once the packs are cloned")
+        return 0
+    links = collect_pack_links(packs, stage, findings)
+    if findings.errors:
+        print("\n  refused: no links were changed")
+        return 1
+
+    changes = 0
+    conflicts = 0
+    if prune and root.is_dir():
+        stage_real = os.path.realpath(str(stage))
+        for entry in sorted(root.iterdir()):
+            if not entry.is_symlink():
+                continue
+            real = os.path.realpath(str(entry))
+            if not (real + os.sep).startswith(stage_real + os.sep):
+                continue
+            desired = links.get(entry.name)
+            if desired is not None and os.path.realpath(str(desired)) == real:
+                continue
+            changes += 1
+            if dry_run:
+                print(f"  would unlink {display(entry)}")
+            else:
+                entry.unlink()
+                print(f"  unlinked  {display(entry)}")
+
+    for name in sorted(links):
+        link = root / name
+        target = links[name]
+        target_real = os.path.realpath(str(target))
+        if link.is_symlink():
+            real = os.path.realpath(str(link))
+            if real == target_real:
+                continue
+            if not (real + os.sep).startswith(os.path.realpath(str(stage)) + os.sep):
+                conflicts += 1
+                findings.error(
+                    f"{display(link)} is a symlink owned by another source; "
+                    "packs only replace links they created"
+                )
+                continue
+            changes += 1
+            if dry_run:
+                print(f"  would relink {display(link)}")
+            else:
+                link.unlink()
+                os.symlink(str(target), str(link))
+                print(f"  relinked  {display(link)} -> {display(target)}")
+            continue
+        if link.exists():
+            conflicts += 1
+            findings.error(
+                f"{display(link)} exists and is not a symlink; move it aside, packs never overwrite real files"
+            )
+            continue
+        changes += 1
+        if dry_run:
+            print(f"  would link {display(link)} -> {display(target)}")
+        else:
+            root.mkdir(parents=True, exist_ok=True)
+            os.symlink(str(target), str(link))
+            print(f"  linked    {display(link)} -> {display(target)}")
+
+    print("")
+    if conflicts:
+        print(f"  {conflicts} conflict(s); nothing was overwritten")
+        return 1
+    verb = "would change" if dry_run else "changed"
+    print(f"  {len(links)} skill(s) selected from {len(packs)} pack(s); {changes} link(s) {verb}")
+    return 0
+
+
+def cmd_skills(args) -> int:
+    command = getattr(args, "skills_command", None)
+    if command == "status":
+        manifest = load_manifest()
+        state = describe_pack_links(manifest)
+        print(f"my-dsh skills — {display(skill_stage_dir(manifest))}")
+        for pack in state["packs"]:
+            count = sum(1 for name, owners in state["selected"].items() if pack["id"] in owners)
+            print(f"  {pack['id']:<12} {pack['commit'][:12]}  {count:>3} skill(s)  {pack['license']}")
+        print("")
+        print(f"  linked   {len(state['linked'])}")
+        print(f"  stale    {len(state['stale'])}{': ' + ', '.join(state['stale']) if state['stale'] else ''}")
+        print(f"  missing  {len(state['missing'])}{': ' + ', '.join(state['missing']) if state['missing'] else ''}")
+        for problem in state["problems"]:
+            print(f"  PROBLEM  {problem}")
+        if state["problems"] or state["stale"] or state["missing"]:
+            print("\n  run ./bin/dsh skills sync")
+            return 1
+        return 0
+    if command == "sync":
+        manifest = load_manifest()
+        return sync_skill_packs(
+            manifest,
+            dry_run=getattr(args, "dry_run", False),
+            offline=getattr(args, "offline", False),
+            prune=not getattr(args, "no_prune", False),
+        )
+    print("usage: ./bin/dsh skills {sync,status}")
+    return 2
 
 
 # --------------------------------------------------------------------------
@@ -293,8 +674,8 @@ def validate_manifest(manifest: dict, findings: Findings) -> None:
         else:
             seen.add(artifact_id)
         mode = artifact.get("mode")
-        if mode not in ("symlink", "symlink-tree", "copy"):
-            findings.error(f"{label}: mode must be symlink, symlink-tree or copy")
+        if mode not in ("symlink", "symlink-tree", "copy", "packs"):
+            findings.error(f"{label}: mode must be symlink, symlink-tree, copy or packs")
         target = artifact.get("target")
         if not isinstance(target, str) or not (
             target.startswith("~/") or target.startswith("/")
@@ -307,6 +688,8 @@ def validate_manifest(manifest: dict, findings: Findings) -> None:
             findings.error(f"{label}: source '{source}' does not exist")
         elif mode == "copy" and not (ROOT / source).is_file():
             findings.error(f"{label}: copy source '{source}' must be a file")
+        elif mode == "packs" and not (ROOT / source).is_file():
+            findings.error(f"{label}: packs source '{source}' must be a file")
 
     plugins = manifest.get("plugins", [])
     if not isinstance(plugins, list):
@@ -555,6 +938,21 @@ def cmd_check(_args) -> int:
     validate_manifest(manifest, findings)
     check_profile(manifest, findings)
     check_skills(findings)
+    if SKILL_PACKS_PATH.is_file():
+        try:
+            packs = load_skill_packs()
+        except SystemExit as exc:
+            findings.error(str(exc))
+        else:
+            validate_skill_packs(packs, findings)
+            selected = sum(
+                len(pack.get("include") or [])
+                for pack in packs.get("packs") or []
+                if isinstance(pack, dict)
+            )
+            findings.note(
+                f"skill packs: {len(packs.get('packs') or [])} pack(s), {selected} third-party skill(s)"
+            )
     for doc in REQUIRED_DOCS:
         if not (ROOT / doc).is_file():
             findings.error(f"required document missing: {doc}")
@@ -1088,15 +1486,21 @@ def cmd_apply(args) -> int:
     if not args.no_link:
         for artifact in link_artifacts(manifest):
             deployer.link_artifact(artifact)
-    failures = 0
-    if args.with_plugins:
-        failures = deployer.install_plugins()
+    pack_failures = 0
+    if pack_artifacts(manifest) and not getattr(args, "no_packs", False):
+        print("")
+        if sync_skill_packs(manifest, dry_run=args.dry_run) != 0:
+            pack_failures = 1
+    plugin_failures = deployer.install_plugins() if args.with_plugins else 0
     print("")
     if deployer.conflicts:
         print(f"  {deployer.conflicts} conflict(s); conflicting files were left untouched. Re-run with --force after reviewing.")
         return 1
-    if failures:
-        print(f"  {failures} plugin installation failure(s)")
+    if pack_failures:
+        print("  skill pack sync failed; no skill links were changed")
+        return 1
+    if plugin_failures:
+        print(f"  {plugin_failures} plugin installation failure(s)")
         return 1
     if deployer.dry_run:
         print(f"  dry run: {deployer.changes} change(s) would be made")
@@ -1113,9 +1517,13 @@ def cmd_link(args) -> int:
     deployer = Deployer(manifest, args.dry_run, args.force)
     for artifact in link_artifacts(manifest):
         deployer.link_artifact(artifact)
+    pack_failures = 0
+    if pack_artifacts(manifest) and not getattr(args, "no_packs", False):
+        print("")
+        pack_failures = 0 if sync_skill_packs(manifest, dry_run=args.dry_run) == 0 else 1
     print("")
-    if deployer.conflicts:
-        print(f"  {deployer.conflicts} conflict(s)")
+    if deployer.conflicts or pack_failures:
+        print(f"  {deployer.conflicts} conflict(s), {pack_failures} pack failure(s)")
         return 1
     print(f"  {'would link' if args.dry_run else 'linked'}: {deployer.changes} change(s)")
     return 0
@@ -1193,6 +1601,16 @@ def cmd_doctor(_args) -> int:
         if child.is_dir() and not child.name.startswith((".", "_"))
     ) if (ROOT / "harness" / "skills").is_dir() else []
     print(f"  skills  {len(skills)} personal: {', '.join(skills) if skills else 'none'}")
+    if pack_artifacts(manifest) and SKILL_PACKS_PATH.is_file():
+        state = describe_pack_links(manifest)
+        print(
+            f"  packs   {len(state['packs'])} third-party: {len(state['linked'])} linked, "
+            f"{len(state['stale'])} stale, {len(state['missing'])} missing"
+        )
+        for problem in state["problems"]:
+            warn(f"skill packs: {problem}")
+        if state["stale"] or state["missing"]:
+            warn("skill pack links are out of date — run ./bin/dsh skills sync")
 
     print("\ninventory")
     if INVENTORY_PATH.is_file():
@@ -1239,13 +1657,26 @@ def main(argv=None) -> int:
     apply_parser.add_argument("--dry-run", action="store_true", help="show what would change")
     apply_parser.add_argument("--force", action="store_true", help="back up and replace conflicting files")
     apply_parser.add_argument("--no-link", action="store_true", help="skip instruction and skill symlinks")
+    apply_parser.add_argument("--no-packs", action="store_true", help="skip third-party skill pack sync")
     apply_parser.add_argument("--with-plugins", action="store_true", help="install personal plugins marked enabled")
     apply_parser.set_defaults(func=cmd_apply)
 
     link = subparsers.add_parser("link", help="create instruction and skill symlinks")
     link.add_argument("--dry-run", action="store_true", help="show what would change")
     link.add_argument("--force", action="store_true", help="back up and replace conflicting paths")
+    link.add_argument("--no-packs", action="store_true", help="skip third-party skill pack sync")
     link.set_defaults(func=cmd_link)
+
+    skills = subparsers.add_parser("skills", help="install and inspect pinned third-party skill packs")
+    skills_commands = skills.add_subparsers(dest="skills_command")
+    sync = skills_commands.add_parser("sync", help="clone pinned packs and link the selected skills")
+    sync.add_argument("--dry-run", action="store_true", help="show what would change")
+    sync.add_argument("--offline", action="store_true", help="use existing clones; never touch the network")
+    sync.add_argument("--no-prune", action="store_true", help="keep links the packs no longer select")
+    sync.set_defaults(func=cmd_skills)
+    status = skills_commands.add_parser("status", help="report pack checkouts and skill links")
+    status.set_defaults(func=cmd_skills)
+    skills.set_defaults(func=cmd_skills)
 
     doctor = subparsers.add_parser("doctor", help="report environment, symlink and drift health")
     doctor.set_defaults(func=cmd_doctor)

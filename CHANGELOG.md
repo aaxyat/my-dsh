@@ -7,6 +7,9 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); version
 
 ### Added
 
+- Third-party skills without vendoring: `harness/skills/packs.json` pins three upstream collections (`mattpocock/skills` 20 skills MIT, `anthropics/skills` 7 Apache-2.0, `cursor/plugins` 17 MIT) by full commit SHA with per-directory inclusion and exclusion reasons. A new `packs` artifact mode and the `skills sync` / `skills status` subcommands clone each pack into `/opt/agents/tools/skill-packs/` and symlink only the selected skills into `~/.agents/skills`; `apply` and `link` run the sync (`--no-packs` to skip), pruning is stateless, and a non-symlink at a skill name is refused rather than overwritten. `obra/superpowers` is recorded as skipped: 13 of its 15 names would shadow the Aegis bundle and break its routing.
+- `harness/skills/README.md`: how packs are pinned, synced, updated and audited, including the ten skills that are user-invocable only upstream.
+- `SETUP.md`: the deploy step now installs the skill packs, and the verify step checks `skills status`.
 - `harness/plugins/pinned-workspaces/`: package documentation for the personal bundle (behaviour, files, install/disable, provenance).
 - The live `desktop` profile now links `@local/pinned-workspaces` from this repository instead of the legacy pre-repo directory.
 - Global operating rules: `harness/instructions/AGENTS.md` replaced with the user-supplied manual, plus `harness/instructions/RULES.md` (compact rules 1–7 for subagent prompts). Both deploy to `~/.agents/` as symlinks.

@@ -56,6 +56,8 @@ OK: `applied: N change(s)`, zero conflicts, zero plugin failures.
 
 If it reports conflicts, **stop**. Run `./bin/dsh apply --dry-run` and read which files differ. Only after you understand the difference, `./bin/dsh apply --force --with-plugins` (it backs up what it replaces).
 
+`apply` also installs the third-party skill packs: it clones each pack at the commit pinned in `harness/skills/packs.json` into `/opt/agents/tools/skill-packs/`, then links the selected skills into `~/.agents/skills`. The first run needs network access; `--no-packs` skips it. Re-run just that step with `./bin/dsh skills sync`.
+
 ### 2.5 Restore credentials
 
 Create `~/.dsh/.credentials.yaml` with mode `600` holding the API keys the profile references by name. Ask the user for the names if they are not already known — `docs/secrets.md` lists them. Nothing goes in this repository.
@@ -87,7 +89,7 @@ Quit DeepSeek Harness completely and reopen it. MCP rows do not hot-reload.
 ./bin/dsh doctor
 ```
 
-OK: profile in sync, no drift, no missing symlinks. Then have the agent call `mcp__cloudflare__whoami` — it must return the account and user. If that tool is absent, the profile did not restart, not a code problem.
+OK: profile in sync, no drift, no missing symlinks, and `./bin/dsh skills status` reports 44 linked, 0 stale, 0 missing. Then have the agent call `mcp__cloudflare__whoami` — it must return the account and user. If that tool is absent, the profile did not restart, not a code problem.
 
 ## 3. When something fails
 

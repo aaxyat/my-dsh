@@ -36,6 +36,15 @@
       "notes": "Each first-level directory becomes ~/.agents/skills/<name> -> repo. DSH ranks user-agents skills at 500, below project skills and above bundled skills."
     },
     {
+      "id": "skill-packs",
+      "kind": "skills",
+      "source": "harness/skills/packs.json",
+      "target": "~/.agents/skills",
+      "mode": "packs",
+      "authority": "upstream",
+      "notes": "Third-party skills are never vendored. Each pack is cloned at its pinned commit into the agent workspace (<agentWorkspace.target>/tools/skill-packs/<pack>) and only the selected skill directories are linked into the same ~/.agents/skills tree. `bin/dsh skills sync` materializes it; `apply` and `link` run it unless --no-packs is passed. Links carry the upstream LICENSE and history inside the clone."
+    },
+    {
       "id": "profile-cordis-patch",
       "kind": "profile",
       "source": "harness/profile/desktop/cordis.patch.yml",

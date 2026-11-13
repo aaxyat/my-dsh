@@ -1,0 +1,143 @@
+{
+  "version": 1,
+  "notes": [
+    "Third-party skill packs: provenance and selection, never vendored source.",
+    "`bin/dsh skills sync` clones each pack at its pinned commit into the agent workspace, then links only the selected skill directories into ~/.agents/skills, where DeepSeek Harness discovers them (user-agents root, rank 500) and Cursor/Codex read the same tree.",
+    "The upstream clone keeps its LICENSE and history, so nothing here redistributes the skills.",
+    "Pin `commit` to the exact SHA that was reviewed, never a branch.",
+    "`include` paths are repo-relative directories that contain a SKILL.md.",
+    "Skill names must stay unique across packs and must not collide with skills shipped by profile bundles: ~/.agents/skills outranks bundled skills (rank 500 before 600), so a collision silently shadows the bundle's copy. Sync refuses duplicates instead.",
+    "Every `exclude` entry needs a reason; it is the review trail for the next update."
+  ],
+  "packs": [
+    {
+      "id": "mattpocock",
+      "title": "Matt Pocock — Skills for Real Engineers",
+      "repo": "https://github.com/mattpocock/skills.git",
+      "commit": "5863806dd4e15c63174bee4e7515a4256792ecfa",
+      "license": "MIT",
+      "added": "2026-11-13",
+      "include": [
+        "skills/engineering/code-review",
+        "skills/engineering/codebase-design",
+        "skills/engineering/diagnosing-bugs",
+        "skills/engineering/domain-modeling",
+        "skills/engineering/implement",
+        "skills/engineering/improve-codebase-architecture",
+        "skills/engineering/pr",
+        "skills/engineering/prototype",
+        "skills/engineering/research",
+        "skills/engineering/retro",
+        "skills/engineering/tdd",
+        "skills/engineering/to-spec",
+        "skills/engineering/to-tickets",
+        "skills/engineering/wizard",
+        "skills/productivity/grilling",
+        "skills/productivity/handoff",
+        "skills/productivity/teach",
+        "skills/productivity/to-questionnaire",
+        "skills/productivity/wait-what",
+        "skills/productivity/writing-for-agents"
+      ],
+      "exclude": {
+        "skills/in-progress": "author's scratch space, explicitly unstable",
+        "skills/misc": "Claude Code hooks, shoehorning and exercise scaffolding; not general workflows",
+        "skills/engineering/ask-matt": "router over the whole upstream repo; misroutes when the rest is not installed",
+        "skills/engineering/setup-matt-pocock-skills": "one-time setup for the upstream repo's own issue tracker",
+        "skills/engineering/triage": "requires a configured issue tracker",
+        "skills/engineering/wayfinder": "requires a configured issue tracker",
+        "skills/engineering/implement-spec": "duplicate of implement",
+        "skills/engineering/grill-with-docs": "redirect stub that re-invokes other skills",
+        "skills/engineering/grill-me": "redirect stub that re-invokes other skills"
+      }
+    },
+    {
+      "id": "anthropic",
+      "title": "Anthropic — Skills",
+      "repo": "https://github.com/anthropics/skills.git",
+      "commit": "2c5958ecac7cee2b583967a2c4981d0f4a75c579",
+      "license": "Apache-2.0",
+      "licenseNote": "No root LICENSE file; the upstream README states the skills are open source under Apache 2.0 and are demonstration material.",
+      "added": "2026-11-13",
+      "include": [
+        "skills/canvas-design",
+        "skills/doc-coauthoring",
+        "skills/frontend-design",
+        "skills/mcp-builder",
+        "skills/skill-creator",
+        "skills/theme-factory",
+        "skills/webapp-testing"
+      ],
+      "exclude": {
+        "skills/claude-api": "excluded by request: collection-specific API guidance",
+        "skills/docx": "superseded by the bundled office-docx skill",
+        "skills/pdf": "superseded by the bundled office skills",
+        "skills/pptx": "superseded by the bundled office-pptx skill",
+        "skills/xlsx": "superseded by the bundled office-xlsx skill",
+        "skills/academy-guide": "Anthropic-internal",
+        "skills/brand-guidelines": "Anthropic-internal",
+        "skills/internal-comms": "Anthropic-internal",
+        "skills/slack-gif-creator": "platform-specific to Slack",
+        "skills/web-artifacts-builder": "platform-specific to claude.ai artifacts",
+        "skills/algorithmic-art": "niche generative-art workflow (p5.js)",
+        "skills/discernment-nudge": "injects an output style into every answer",
+        "template": "not a skill"
+      }
+    },
+    {
+      "id": "cursor",
+      "title": "Cursor — Plugins (team workflow skills)",
+      "repo": "https://github.com/cursor/plugins.git",
+      "commit": "24621dbcc59e205a7faadb0e06d540f91712b5cc",
+      "license": "MIT",
+      "added": "2026-11-13",
+      "include": [
+        "agent-compatibility/skills/check-agent-compatibility",
+        "cli-for-agent/skills/cli-for-agents",
+        "cursor-team-kit/skills/check-compiler-errors",
+        "cursor-team-kit/skills/deslop",
+        "cursor-team-kit/skills/fix-ci",
+        "cursor-team-kit/skills/fix-merge-conflicts",
+        "cursor-team-kit/skills/get-pr-comments",
+        "cursor-team-kit/skills/loop-on-ci",
+        "cursor-team-kit/skills/make-pr-easy-to-review",
+        "cursor-team-kit/skills/new-branch-and-pr",
+        "cursor-team-kit/skills/review-and-ship",
+        "cursor-team-kit/skills/run-smoke-tests",
+        "cursor-team-kit/skills/thermo-nuclear-code-quality-review",
+        "cursor-team-kit/skills/verify-this",
+        "cursor-team-kit/skills/weekly-review",
+        "cursor-team-kit/skills/what-did-i-get-done",
+        "cursor-team-kit/skills/workflow-from-chats"
+      ],
+      "exclude": {
+        "cursor-sdk": "Cursor SDK bindings",
+        "orchestrate": "spawns Cursor cloud agents through the Cursor SDK",
+        "continual-learning": "delegates to Cursor's own agents-memory-updater subagent",
+        "create-plugin": "Cursor plugin packaging format",
+        "docs-canvas": "renders into the Cursor docs UI",
+        "pr-review-canvas": "renders into the Cursor PR review UI",
+        "grok-voice": "Cursor voice mode",
+        "origin-apps": "Cursor origin app scaffolding",
+        "dyl-stack": "maintainer's personal opinion stack",
+        "ralph-loop": "maintainer-specific loop harness",
+        "teaching": "maintainer-specific teaching workflow",
+        "thermos": "byte-identical duplicate of cursor-team-kit/thermo-nuclear-code-quality-review",
+        "harness": "vendored copy of pstack",
+        "pstack": "61-skill personal opinion stack; overlaps the packs above",
+        "third_party": "vendored third-party plugins"
+      }
+    }
+  ],
+  "skipped": [
+    {
+      "id": "superpowers",
+      "title": "obra/superpowers",
+      "repo": "https://github.com/obra/superpowers.git",
+      "commit": "22f0b463e7a5e579904dd6211a520321035526f7",
+      "license": "MIT",
+      "reason": "13 of its 15 skill names already ship with the Aegis profile bundle (brainstorming, dispatching-parallel-agents, executing-plans, finishing-a-development-branch, receiving-code-review, requesting-code-review, subagent-driven-development, systematic-debugging, test-driven-development, using-git-worktrees, verification-before-completion, writing-plans, writing-skills). Because ~/.agents/skills outranks bundled skills, installing them here would shadow Aegis's DSH-adapted copies and break Aegis routing. The two remaining skills are not wanted either: using-superpowers competes with the Aegis routing bootstrap, diagnosing-superpowers only debugs its own installer.",
+      "revisitWhen": "Aegis is dropped from the profile, or superpowers gains skills outside its current set."
+    }
+  ]
+}

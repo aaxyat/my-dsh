@@ -49,6 +49,7 @@ One artifact, one home. If something does not fit the table below, write the pro
 │   │       └── pnpm-workspace.yaml
 │   ├── skills/
 │   │   ├── README.md
+│   │   ├── packs.json            third-party packs: repo, pinned commit, selection
 │   │   └── <skill-name>/
 │   │       ├── SKILL.md
 │   │       └── references/       optional, loaded on demand
@@ -73,6 +74,7 @@ One artifact, one home. If something does not fit the table below, write the pro
 | A rule for one project | that project's `AGENTS.md` (use `docs/templates/project-AGENTS.md`) | commit in that project |
 | A reusable capability with instructions | `harness/skills/<name>/SKILL.md` | `./bin/dsh link`, new session |
 | Bulk skill reference material | `harness/skills/<name>/references/` | — |
+| A third-party skill | `harness/skills/packs.json` → `include` (never the source itself) | `./bin/dsh skills sync` |
 | A personal bundle (host or UI code) | `harness/plugins/<name>/` | manifest entry, `apply --with-plugins` |
 | A third-party bundle | `harness/plugins/registry.yaml` entry | install in app, `capture` |
 | An MCP server | profile patch row **and** `harness/mcp/servers.yaml` | `apply`, restart |

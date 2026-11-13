@@ -11,17 +11,18 @@ It answers: where the setup stands, what was decided, what is still open, and wh
 | Field | Value |
 |---|---|
 | Status | Bootstrapped, provisioned, validated, published |
-| As of | 2026-11-12 |
+| As of | 2026-11-13 |
 | Repository | https://github.com/aaxyat/my-dsh (public) |
 | DSH desktop | `0.2.2-rc.1` (darwin / arm64) |
 | Profile | `desktop` |
 | DSH home | `~/.dsh` |
 | Shared agents home | `~/.agents` (created by `bin/dsh link`) |
 | Personal skills | 0 (scaffolding ready) |
+| Third-party skills | 44 from 3 pinned packs — `mattpocock` (20, MIT), `anthropic` (7, Apache-2.0), `cursor` (17, MIT); `obra/superpowers` deliberately skipped because it would shadow Aegis |
 | Personal plugins | 6 installed (`@local/pinned-workspaces`, `@local/btw`, and the `parallel-mcp`, `playwright-mcp`, `context7-mcp`, `cloudflare-mcp` configuration bundles, linked from `harness/plugins/`) |
 | Third-party plugins | 5 (`dsh-widgets` 1.8.5, `@openviking/dsh-memory-plugin` 0.5.34 and `billion-context` 0.1.213 from npm; `aegis` 2.15.0 from a GitHub tag; `dshmarket` 1.73.17 from npm) |
 | MCP servers | 4 configured (`parallel-mcp`, `playwright`, `context7`, `cloudflare`) plus the `openviking` MCP tools from the memory plugin; `cloudflare` reaches the full API through an `mcp-remote` stdio bridge |
-| Managed artifacts | 6 + 6 personal bundles |
+| Managed artifacts | 7 + 6 personal bundles |
 | Replication runbook | [`SETUP.md`](SETUP.md) — one file, eight commands, no repository exploration |
 | Global rules | `AGENTS.md` + `RULES.md` deployed as symlinks |
 | Agent workspace | `/opt/agents` provisioned from `agents/` · 10 helpers · `bin/` locked |
@@ -52,6 +53,7 @@ Verified on the originating machine:
 - Aegis doctor run from `/Users/aaxyat/.dsh/profiles/desktop/node_modules/aegis`: `python3 scripts/aegis-doctor.py --write-config --json` returned `"ok": true`, `"workspaceSupport": "available"`, `"configStatus": "configured"`; all 14 checks passed. `python` is not installed, so `python3` 3.15.2 was used.
 - Aegis automatic entry verified in a fresh Desktop session (`session-0b67f5a9-98cf-4529-aefa-87f1adfcfca9`): `AEGIS_DSH_ROUTING_BOOTSTRAP` appears in `agent/inbox/spliced` and again in `user/message` after the first tool calls, and the agent loaded `systematic-debugging` through the native `skill` tool and completed the turn.
 - `dshmarket` 1.73.17 installed into the `web` profile with `dsh plugin --profile web add dshmarket` (using the bundled Node/pnpm through a temporary shim) and into the `desktop` profile with the app plugin manager. `include:dsh-market` is `active` in Desktop (`moduleName: dshmarket`); the web profile records the dependency and bundle patch. The web UI was not booted: the temporary CLI failed with `No usable native binding found for node-addon-require-builtin-darwin-arm64`, so the market page is not visually verified.
+- Third-party skill packs installed without vendoring: `harness/skills/packs.json` pins three packs, `./bin/dsh skills sync` cloned them at the pinned commits into `/opt/agents/tools/skill-packs/` and linked 44 skills into `~/.agents/skills`. The live session catalog gained all 34 model-invocable skills, and the native `skill` tool loaded `deslop` from the pack clone. Re-sync is idempotent (`0 link(s) changed`), `--offline` works from the existing clones, prune removed a deselected link and relinked it when restored, and a real directory at a skill name was refused with `nothing was overwritten`.
 - `/opt/agents` provisioned and `preflight` exits 0 with 5 warnings (mediaserver host key, `gitleaks`, hooks, retention, PATH).
 - Bitwarden SSH agent verified end-to-end: `ssh-verify newton` succeeded; `newton` multiplexes for 180 s and `mediaserver` is exempt.
 - Tailnet names resolve directly: `newton` → `100.94.136.32`, `mediaserver` → `100.74.97.34`; no `Host` blocks needed.
@@ -102,6 +104,8 @@ Full rationale: [`docs/decisions/`](docs/decisions/).
 5. **Capture cadence.** Today capture is manual. If drift becomes common, revisit a launchd/Git-hook automation (see ADR-0002 consequences).
 6. **License scope for `harness/plugins/btw/`.** The bundle carries its own Apache-2.0 LICENSE because it is derived from `dsh-btw-marginalia`, while the repository root still has no license. Decide whether to add a root LICENSE that covers the rest of the repo or keep per-directory licensing.
 
+7. **User-invocable-only pack skills.** Ten selected skills declare `disable-model-invocation: true` upstream, so DSH hides them from the model catalog; they only run when invoked by name. Decide whether that is acceptable for `implement`, `to-spec`, `to-tickets`, `handoff` and friends, or whether one should be copied into `harness/skills/` with the flag removed.
+
 ## Next actions
 
 Priority order:
@@ -144,6 +148,7 @@ Add one row per working session, newest first. Keep it terse; details belong in 
 
 | Date | Session | Outcome |
 |---|---|---|
+| 2026-11-13 | Third-party skills | Installed 44 general-purpose skills from `mattpocock`, `anthropics/skills` and `cursor/plugins` without vendoring: `harness/skills/packs.json` records repo + pinned commit + selection + exclusion reasons, a new `packs` manifest mode and `skills sync|status` subcommands clone into `/opt/agents/tools/skill-packs/` and link into `~/.agents/skills`. `superpowers` skipped (13/15 names would shadow Aegis). Discovery verified live via the `skill` tool; prune, conflict refusal and offline paths exercised. |
 | 2026-11-11 | Bootstrap | Repo initialized; DSH config inventoried; profile, personal plugin and instructions captured; CLI (`capture/apply/link/check/doctor`), docs, ADRs, manifest, CI added; validated and pushed to GitHub. |
 | 2026-11-11 | Plugin tracking | Documented `@local/pinned-workspaces`; repointed the live `desktop` profile link from the pre-repo directory to `harness/plugins/pinned-workspaces/`; captured the new dependency and inventory. |
 | 2026-11-11 | Global rules | Installed the user-supplied operating manual as the auto-loaded `AGENTS.md`; added the derived compact `RULES.md`; deployed both to `~/.agents/`; audited rule assumptions in `docs/host-readiness.md`. |
