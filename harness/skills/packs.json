@@ -92,7 +92,6 @@
       "license": "MIT",
       "added": "2026-11-13",
       "include": [
-        "agent-compatibility/skills/check-agent-compatibility",
         "cli-for-agent/skills/cli-for-agents",
         "cursor-team-kit/skills/check-compiler-errors",
         "cursor-team-kit/skills/deslop",
@@ -111,6 +110,7 @@
         "cursor-team-kit/skills/workflow-from-chats"
       ],
       "exclude": {
+        "agent-compatibility/skills/check-agent-compatibility": "invalid YAML frontmatter upstream: unquoted ': ' inside description, so DSH's parser ignores the file",
         "cursor-sdk": "Cursor SDK bindings",
         "orchestrate": "spawns Cursor cloud agents through the Cursor SDK",
         "continual-learning": "delegates to Cursor's own agents-memory-updater subagent",

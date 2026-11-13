@@ -353,6 +353,38 @@ def ensure_pack_checkout(pack: dict, stage: Path, findings: Findings) -> bool:
     return True
 
 
+def frontmatter_defect(path: Path):
+    """Return a reason when a SKILL.md frontmatter cannot be parsed by a strict YAML reader.
+
+    DSH parses frontmatter with a strict YAML parser and silently drops a skill it
+    cannot read, so an unquoted `key: value: more` would remove the skill from the
+    catalog without any visible failure. Catch that shape here instead.
+    """
+    try:
+        lines = path.read_text(encoding="utf-8").splitlines()
+    except OSError as exc:
+        return f"unreadable: {exc}"
+    if not lines or lines[0].strip() != "---":
+        return "no YAML front matter"
+    for line in lines[1:]:
+        if line.strip() == "---":
+            return None
+        if line.startswith((" ", "\t")) or ":" not in line:
+            continue
+        key, _, value = line.partition(":")
+        if key.strip() not in ("name", "description"):
+            continue
+        value = value.strip()
+        if not value or value[0] in "\"'|>":
+            continue
+        if ": " in value:
+            return (
+                f"unquoted '{key.strip()}:' value contains ': ', which is invalid YAML; "
+                "a strict parser drops the skill"
+            )
+    return "unterminated YAML front matter"
+
+
 def collect_pack_links(packs, stage: Path, findings: Findings) -> dict:
     """Map skill name -> checked-out skill directory for every selected entry."""
     links = {}
@@ -363,6 +395,10 @@ def collect_pack_links(packs, stage: Path, findings: Findings) -> dict:
             skill_md = directory / "SKILL.md"
             if not skill_md.is_file():
                 findings.error(f"{pack['id']}: {entry}/SKILL.md is missing at the pinned commit")
+                continue
+            defect = frontmatter_defect(skill_md)
+            if defect:
+                findings.error(f"{pack['id']}: {entry}/SKILL.md {defect}")
                 continue
             fields, _body = parse_front_matter(skill_md)
             if fields is None:

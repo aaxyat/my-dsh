@@ -48,9 +48,9 @@ The clone keeps the upstream `LICENSE`, history and README, so nothing is redist
 |---|---|---|---|---|
 | `mattpocock` | [mattpocock/skills](https://github.com/mattpocock/skills) | `5863806dd4e1` | MIT | 20 engineering and productivity workflows |
 | `anthropic` | [anthropics/skills](https://github.com/anthropics/skills) | `2c5958ecac7c` | Apache-2.0 | 7: skill authoring, MCP, design, docs, web testing |
-| `cursor` | [cursor/plugins](https://github.com/cursor/plugins) | `24621dbcc59e` | MIT | 17 self-contained PR/CI/review workflows |
+| `cursor` | [cursor/plugins](https://github.com/cursor/plugins) | `24621dbcc59e` | MIT | 16 self-contained PR/CI/review workflows |
 
-`packs.json` also records every excluded directory with a one-line reason, so the next reviewer sees why something is missing instead of re-deciding it.
+`packs.json` also records every excluded directory with a one-line reason, so the next reviewer sees why something is missing instead of re-deciding it. One exclusion is a defect rather than a judgement call: `check-agent-compatibility` writes `description: Run the ... pass: scanner score` — an unquoted colon-space, which is invalid YAML, so a strict parser drops the file. Sync refuses that shape instead of linking a skill that would never appear (`frontmatter_defect`), so re-add it only after upstream quotes the value.
 
 `obra/superpowers` is deliberately **not** installed: 13 of its 15 skills already ship with the Aegis bundle under identical names, and because `~/.agents/skills` (rank 500) outranks bundled skills (600), installing it would silently shadow Aegis's DSH-adapted copies and break its routing. The `skipped` entry in `packs.json` records the full reasoning and when to revisit it.
 

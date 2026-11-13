@@ -89,7 +89,7 @@ Quit DeepSeek Harness completely and reopen it. MCP rows do not hot-reload.
 ./bin/dsh doctor
 ```
 
-OK: profile in sync, no drift, no missing symlinks, and `./bin/dsh skills status` reports 44 linked, 0 stale, 0 missing. Then have the agent call `mcp__cloudflare__whoami` — it must return the account and user. If that tool is absent, the profile did not restart, not a code problem.
+OK: profile in sync, no drift, no missing symlinks, and `./bin/dsh skills status` reports 43 linked, 0 stale, 0 missing. Then have the agent call `mcp__cloudflare__whoami` — it must return the account and user. If that tool is absent, the profile did not restart, not a code problem.
 
 ## 3. When something fails
 
