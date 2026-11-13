@@ -29,6 +29,7 @@ INVENTORY_PATH = ROOT / "machine" / "inventory.json"
 
 REQUIRED_DOCS = [
     "README.md",
+    "SETUP.md",
     "AGENTS.md",
     "HANDOFF.md",
     "CHANGELOG.md",

@@ -26,6 +26,8 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); version
 - Third-party `aegis` 2.15.0 installed from GitHub tag `v2.15.0` as a Desktop profile bundle: a method pack with 23 skills, a native filesystem skill provider and a deferred routing bootstrap. `include:aegis-method-pack` is active; the module is `aegis/extensions/dsh/index.js`. Doctor returned `ok: true`, `workspaceSupport: available` and `configStatus: configured` from the installed method-pack root. A fresh Desktop session received the bootstrap after its first tool calls and loaded `systematic-debugging`. Recorded in `harness/plugins/registry.yaml`; not vendored.
 - Third-party `dshmarket` 1.73.17 installed from npm into both the `web` profile and the `desktop` profile: a visual in-app plugin market with browse, search and one-click install. `include:dsh-market` is active in Desktop; the web profile package and `dsh-market` bundle patch are recorded. The web UI could not boot through the temporary CLI (missing Node ABI 137 native binding), so the market page is not visually verified. Recorded in `harness/plugins/registry.yaml`; not vendored.
 
+- `SETUP.md`: a self-contained replication runbook for a fresh machine — a facts table of everything expensive to rediscover, eight ordered commands with their expected output, a symptom/fix table, and the maintenance rule. Written to be followed by an agent that reads nothing else, so a rebuild costs one file of context instead of a repository exploration.
+
 ### Added (agent workspace)
 
 - `agents/`: tracked source for `/opt/agents` — layout README plus `preflight`, `manifest`, `rm`, `gate-rm`, `undo-rm`, `git-snapshot`, `ssh-probe`, `ssh-verify`, `sshd-apply`, `retention`.
@@ -35,6 +37,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); version
 
 ### Changed
 
+- `check` now requires `SETUP.md`, and `AGENTS.md` directs replication tasks to it in §2 while §8 requires it to be updated in the same commit as any setup change. The runbook cannot silently rot.
 - `@local/cloudflare-mcp` now mounts the full Cloudflare API (code mode: `search`, `execute`, `docs`, `whoami`) instead of the anonymous documentation server. DSH's MCP client has no OAuth flow — no authorization handler, no token store, no sign-in state — so the row is a stdio `mcp-remote` bridge that speaks OAuth to `https://mcp.cloudflare.com/mcp` and stores tokens in `~/.mcp-auth`. Added `tools/provision_cloudflare_mcp_oauth.py` (pinned `mcp-remote@0.16.6`, `--ignore-scripts`, idempotent) to install it under `/opt/agents/tools/cloudflare-mcp-oauth`. Publish-time and dependency scripts were audited: the tree declares no `preinstall`/`install`/`postinstall` hook, opens no non-loopback listener, and contacts no endpoint other than the server's own OAuth metadata and token endpoints.
 
 ### Fixed

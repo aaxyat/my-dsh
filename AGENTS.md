@@ -22,6 +22,8 @@ It is **not** the DSH source tree and **not** an application. Do not add product
 3. Running `./bin/dsh check` and `git status --short --branch`.
 4. Checking that the working tree is clean or that you understand every pending change.
 
+**Exception — replication tasks.** If the task is "set up this machine", "replicate this setup" or "restore on a new host", read [`SETUP.md`](SETUP.md) instead of this list and follow it. It is deliberately self-contained so that a fresh agent spends one file of context, not an exploration.
+
 If `HANDOFF.md` and the code disagree, the code wins — then fix `HANDOFF.md`.
 
 ## 3. The one rule that matters
@@ -99,8 +101,9 @@ Every consequential change updates, in the same commit:
 2. `CHANGELOG.md` — under `## [Unreleased]` for user-visible changes.
 3. The relevant `docs/` page (or an ADR for structural decisions).
 4. `harness/manifest.json` — if any deployed artifact changed.
+5. [`SETUP.md`](SETUP.md) — if a setup step, path, command, version or §1 fact changed. It is the single runbook a fresh agent follows; a stale step costs the next machine a full re-discovery.
 
-Do not create new status documents. `HANDOFF.md` is the single living status file; everything else is reference material.
+Do not create new status documents. `HANDOFF.md` is the single living status file; everything else is reference material. `SETUP.md` is a runbook, not a status file — it describes the procedure, never the current state.
 
 ## 9. Destructive actions
 

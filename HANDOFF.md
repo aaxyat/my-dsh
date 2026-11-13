@@ -22,6 +22,7 @@ It answers: where the setup stands, what was decided, what is still open, and wh
 | Third-party plugins | 5 (`dsh-widgets` 1.8.5, `@openviking/dsh-memory-plugin` 0.5.34 and `billion-context` 0.1.213 from npm; `aegis` 2.15.0 from a GitHub tag; `dshmarket` 1.73.17 from npm) |
 | MCP servers | 4 configured (`parallel-mcp`, `playwright`, `context7`, `cloudflare`) plus the `openviking` MCP tools from the memory plugin; `cloudflare` reaches the full API through an `mcp-remote` stdio bridge |
 | Managed artifacts | 6 + 6 personal bundles |
+| Replication runbook | [`SETUP.md`](SETUP.md) — one file, eight commands, no repository exploration |
 | Global rules | `AGENTS.md` + `RULES.md` deployed as symlinks |
 | Agent workspace | `/opt/agents` provisioned from `agents/` · 10 helpers · `bin/` locked |
 | SSH auth | Bitwarden `IdentityAgent`; `newton` verified; `mediaserver` host key pending |
@@ -106,13 +107,14 @@ Full rationale: [`docs/decisions/`](docs/decisions/).
 Priority order:
 
 1. **Restart DSH**, open a new session, and confirm the new global rules load (`AGENTS.md`), with `RULES.md` present at `~/.agents/`. Then run `/btw` with a question and confirm a bubble streams, Stop keeps the partial, and main transcript has no new rows. The same restart loads the rerouted `cloudflare` row — confirm `mcp__cloudflare__whoami` returns the authenticated account.
-2. Confirm the `mediaserver` host-key fingerprint out of band, then run `ssh-verify mediaserver`; install `gitleaks` + global hook chain, retention LaunchAgent, and wire `PATH`.
-3. Resolve the license question (README + `LICENSE`).
-4. Add the first real personal skill under `harness/skills/<name>/` using [`docs/templates/SKILL.md`](docs/templates/SKILL.md), then `./bin/dsh link`.
-5. Parallel MCP is anonymous. To enable `web_research` and higher limits, change the bundle URL to `https://mcp.parallel.ai/mcp?login`, reinstall it, and complete the browser sign-in.
-6. Re-run `./bin/dsh capture` after any change made in the DSH app, and commit.
-7. Update `agents/bin/*` in the repo, then `python3 tools/provision_agents.py --force`; never edit `/opt/agents/bin` in place.
-8. Boot a Web runtime with a working native binding, open Settings → dshmarket, and confirm the market page and one-click install; then decide whether to pin or upgrade from 1.73.17 to 1.73.19.
+2. **Prove [`SETUP.md`](SETUP.md) on a clean target** — a fresh macOS account, VM or container — following it verbatim, and fix every step that needed an undocumented workaround. A step that cannot be completed without opening another file is a bug in the runbook.
+3. Confirm the `mediaserver` host-key fingerprint out of band, then run `ssh-verify mediaserver`; install `gitleaks` + global hook chain, retention LaunchAgent, and wire `PATH`.
+4. Resolve the license question (README + `LICENSE`).
+5. Add the first real personal skill under `harness/skills/<name>/` using [`docs/templates/SKILL.md`](docs/templates/SKILL.md), then `./bin/dsh link`.
+6. Parallel MCP is anonymous. To enable `web_research` and higher limits, change the bundle URL to `https://mcp.parallel.ai/mcp?login`, reinstall it, and complete the browser sign-in.
+7. Re-run `./bin/dsh capture` after any change made in the DSH app, and commit.
+8. Update `agents/bin/*` in the repo, then `python3 tools/provision_agents.py --force`; never edit `/opt/agents/bin` in place.
+9. Boot a Web runtime with a working native binding, open Settings → dshmarket, and confirm the market page and one-click install; then decide whether to pin or upgrade from 1.73.17 to 1.73.19.
 
 ## Known gaps
 
@@ -156,6 +158,7 @@ Add one row per working session, newest first. Keep it terse; details belong in 
 | 2026-11-12 | Aegis | Installed `aegis` 2.15.0 natively through the Desktop plugin manager from GitHub tag `v2.15.0`; `include:aegis-method-pack` is active and the profile records the dependency. Doctor returned ok/available/configured. A fresh Desktop session received the deferred `AEGIS_DSH_ROUTING_BOOTSTRAP` after its first tool calls and loaded `systematic-debugging`. |
 | 2026-11-12 | dshmarket | Installed `dshmarket` 1.73.17 into `web` via the CLI and into `desktop` via the app plugin manager; `include:dsh-market` is active in Desktop and the web profile records the dependency. Web UI boot failed on a missing native binding, so the market page remains unverified. |
 | 2026-11-13 | Cloudflare MCP OAuth | Confirmed DSH `0.2.2-rc.2` has no MCP OAuth support (client config, package scans, manager's "No OAuth flow" limitation). Audited `mcp-remote@0.16.6` — integrity hash, no install scripts in the 221-entry dependency tree, loopback-only callback, no telemetry, `~/.mcp-auth` at `0600` — then installed it under `/opt/agents/tools/cloudflare-mcp-oauth` with scripts disabled. Completed the browser OAuth grant; a stdio handshake returned `cloudflare-api` 0.1.0 with `docs`, `search`, `execute`, `whoami`. The `cloudflare` row now targets the full API through that bridge; the app restart that loads it is still pending. |
+| 2026-11-13 | Setup runbook | Added `SETUP.md`, a self-contained replication runbook (facts table, eight commands with expected output, failure table) so a fresh agent spends one file of context instead of exploring the repository. `check` now requires it; `AGENTS.md` §2 routes replication tasks to it and §8 requires updating it with any setup change. |
 
 ---
 

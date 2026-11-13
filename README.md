@@ -108,6 +108,7 @@ The global agent rules (`AGENTS.md` + `RULES.md`) are deployed from this repo an
 
 ## Documentation
 
+- [SETUP.md](SETUP.md) — one-pass replication runbook for a fresh machine (the file to read first)
 - [docs/architecture.md](docs/architecture.md) — how DSH loads configuration (verified against 0.2.2-rc.1)
 - [docs/layout.md](docs/layout.md) — where every kind of file belongs
 - [docs/workflow.md](docs/workflow.md) — change lifecycle, recipes, commit conventions
